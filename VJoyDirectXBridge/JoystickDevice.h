@@ -213,30 +213,30 @@ inline void SetReportAxis(DEVICE_REPORT& report, CJoystickDevice::AxisIndex axis
             case CJoystickDevice::AxisIndex::AXIS_RUDDER:
                 report.Rudder = value;
                 return;
-
-            case CJoystickDevice::AxisIndex::AXIS_S2:
-                report.Slider[2] = value;
-                return;
-
-            case CJoystickDevice::AxisIndex::AXIS_S3:
-                report.Slider[3] = value;
-                return;
-
-            case CJoystickDevice::AxisIndex::AXIS_DIAL_0:
-                report.Dial[0] = value;
-                return;
-
-            case CJoystickDevice::AxisIndex::AXIS_DIAL_1:
-                report.Dial[1] = value;
-                return;
-
-            case CJoystickDevice::AxisIndex::AXIS_DIAL_2:
-                report.Dial[2] = value;
-                return;
-
-            case CJoystickDevice::AxisIndex::AXIS_DIAL_3:
-                report.Dial[3] = value;
-                return;
+            //
+            // case CJoystickDevice::AxisIndex::AXIS_S2:
+            //     report.Slider[2] = value;
+            //     return;
+            //
+            // case CJoystickDevice::AxisIndex::AXIS_S3:
+            //     report.Slider[3] = value;
+            //     return;
+            //
+            // case CJoystickDevice::AxisIndex::AXIS_DIAL_0:
+            //     report.Dial[0] = value;
+            //     return;
+            //
+            // case CJoystickDevice::AxisIndex::AXIS_DIAL_1:
+            //     report.Dial[1] = value;
+            //     return;
+            //
+            // case CJoystickDevice::AxisIndex::AXIS_DIAL_2:
+            //     report.Dial[2] = value;
+            //     return;
+            //
+            // case CJoystickDevice::AxisIndex::AXIS_DIAL_3:
+            //     report.Dial[3] = value;
+            //     return;
     }
 }
 

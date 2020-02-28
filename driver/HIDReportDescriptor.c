@@ -66,16 +66,16 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
     0x16, 0x01, 0x80, //     LOGICAL_MINIMUM (-32767)
     0x26, 0xFF, 0x7F, //     LOGICAL_MAXIMUM (32767)
     0x75, 0x10, //     REPORT_SIZE (16)
-    0x95, 4, //   REPORT_COUNT
+    0x95, 2, //   REPORT_COUNT
     0x81, 0x02, //   INPUT (Data,Var,Abs)
 
-    0x05, USAGE_PAGE_GENERIC_DESKTOP, //   USAGE_PAGE (generic)
-    0x09, USAGE_DIAL, //   USAGE (Dial)
-    0x16, 0x01, 0x80, //     LOGICAL_MINIMUM (-32767)
-    0x26, 0xFF, 0x7F, //     LOGICAL_MAXIMUM (32767)
-    0x75, 0x10, //     REPORT_SIZE (16)
-    0x95, 4, //   REPORT_COUNT
-    0x81, 0x02, //   INPUT (Data,Var,Abs)
+    // 0x05, USAGE_PAGE_GENERIC_DESKTOP, //   USAGE_PAGE (generic)
+    // 0x09, USAGE_DIAL, //   USAGE (Dial)
+    // 0x16, 0x01, 0x80, //     LOGICAL_MINIMUM (-32767)
+    // 0x26, 0xFF, 0x7F, //     LOGICAL_MAXIMUM (32767)
+    // 0x75, 0x10, //     REPORT_SIZE (16)
+    // 0x95, 4, //   REPORT_COUNT
+    // 0x81, 0x02, //   INPUT (Data,Var,Abs)
 
     0x09, USAGE_HAT_SWITCH, //   USAGE (Hat switch)
     0x15, 0, //   LOGICAL_MINIMUM (0)
@@ -109,7 +109,7 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
     0x16, 0x01, 0x80, //   LOGICAL_MINIMUM (-32767)
     0x26, 0xFF, 0x7F, //   LOGICAL_MAXIMUM (32767)
     0x75, 0x10, //   REPORT_SIZE (16)
-    0x95, 15, //   REPORT_COUNT: X, Y, Throttle, Rudder, rX, rY, rZ, Slider[4], Dial[4]
+    0x95, 9, //   REPORT_COUNT: X, Y, Throttle, Rudder, rX, rY, rZ, Slider[4], Dial[4]
     0x09, 0x02, //   USAGE (Vendor Usage 1)
     0x91, 0x02, //   OUTPUT (Data,Var,Abs)
 

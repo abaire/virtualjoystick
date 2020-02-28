@@ -43,8 +43,8 @@ typedef struct _DEVICE_REPORT
     INT16 rY;
     INT16 rZ;
 
-    INT16 Slider[4];
-    INT16 Dial[4];
+    INT16 Slider[2];
+    // INT16 Dial[4];
 
     INT8  POV[4];
 
@@ -57,6 +57,4 @@ typedef struct _Device_Packet
     DEVICE_REPORT report;
 } DEVICE_PACKET, * PDEVICE_PACKET;
 
-
 #include <poppack.h>
-
