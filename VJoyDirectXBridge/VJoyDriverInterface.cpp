@@ -15,9 +15,8 @@
 #include "DriverInterface.h"
 
 //= G L O B A L = V A R S =====================================================================
-typedef std::map< HANDLE, CDriverInterface > HandleMap_t;
+typedef std::map<HANDLE, CDriverInterface> HandleMap_t;
 static HandleMap_t g_driverHandles;
-
 
 
 //= F U N C T I O N S =========================================================================
@@ -26,8 +25,8 @@ static HandleMap_t g_driverHandles;
 //	
 //-------------------------------------------------------------------------------------------
 BOOL APIENTRY DllMain(HMODULE hModule,
-    DWORD  ul_reason_for_call,
-    LPVOID lpReserved)
+                      DWORD ul_reason_for_call,
+                      LPVOID lpReserved)
 {
     switch (ul_reason_for_call)
     {
@@ -180,11 +179,81 @@ BOOL SetDeviceIDs(HANDLE attachID, const char* joystickGUIDStr, const char* rudd
     if (it == g_driverHandles.end())
         return FALSE;
 
-    GUID joystickGUID, rudderGUID;
+    CDriverInterface::DeviceIDMapping mapping;
 
-    ParseGUID(joystickGUID, joystickGUIDStr);
-    ParseGUID(rudderGUID, rudderGUIDStr);
+#define MAP( db, di, sb, si )  m.destBlock = db, m.destIndex = di, m.srcBlock = sb, m.srcIndex = si, m.invert = FALSE
+#define MAPAXIS( di, si ) m.destBlock = m.srcBlock = CJoystickDevice::DS_AXIS, m.destIndex = di, m.srcIndex = si, m.invert = FALSE
+#define MAPBUTTON( index )  m.destBlock = m.srcBlock = CJoystickDevice::DS_BUTTON, m.destIndex = m.srcIndex = index, m.invert = FALSE
 
-    return it->second.SetDevicesToRegister(joystickGUID, rudderGUID);
+    {
+        GUID joystickGUID;
+        ParseGUID(joystickGUID, joystickGUIDStr);
+        CJoystickDevice::DeviceMappingVector mappingVector;
+
+        CJoystickDevice::DeviceMapping m;
+        MAPAXIS(CJoystickDevice::AXIS_X, CJoystickDevice::AXIS_X);
+        mappingVector.push_back(m);
+
+        MAPAXIS(CJoystickDevice::AXIS_Y, CJoystickDevice::AXIS_Y);
+        mappingVector.push_back(m);
+
+        MAPAXIS(CJoystickDevice::AXIS_Z, CJoystickDevice::AXIS_S0);
+        mappingVector.push_back(m);
+
+        MAPAXIS(CJoystickDevice::AXIS_S0, CJoystickDevice::AXIS_S1);
+        mappingVector.push_back(m);
+
+        MAPAXIS(CJoystickDevice::AXIS_S1, CJoystickDevice::AXIS_RZ);
+        mappingVector.push_back(m);
+
+        // Map buttons
+        for (UINT32 i = 0; i < 64; ++i)
+        {
+            MAPBUTTON(i);
+            mappingVector.push_back(m);
+        }
+
+        // Map our POV's
+#ifdef HATS_AS_BUTTONS
+                // Clear the old button mappings
+                MAPBUTTON(HAT_1_AS_BUTTONS_OFFSET);
+                dev.ClearMapping(m);
+                MAPBUTTON(HAT_1_AS_BUTTONS_OFFSET + 1);
+                dev.ClearMapping(m);
+                MAPBUTTON(HAT_1_AS_BUTTONS_OFFSET + 2);
+                dev.ClearMapping(m);
+                MAPBUTTON(HAT_1_AS_BUTTONS_OFFSET + 3);
+                dev.ClearMapping(m);
+        
+                MAP(CJoystickDevice::DS_BUTTON, HAT_1_AS_BUTTONS_OFFSET, CJoystickDevice::DS_POV, 0);
+                mappingVector.push_back(m);
+#else
+        MAP(CJoystickDevice::DS_POV, 0, CJoystickDevice::DS_POV, 0);
+        mappingVector.push_back(m);
+#endif
+
+
+        mapping[joystickGUID] = mappingVector;
+    }
+
+    {
+        GUID rudderGUID;
+        ParseGUID(rudderGUID, rudderGUIDStr);
+        CJoystickDevice::DeviceMappingVector mappingVector;
+
+        CJoystickDevice::DeviceMapping m;
+        MAPAXIS(CJoystickDevice::AXIS_RX, CJoystickDevice::AXIS_X); // X axis is left pedal (inverted)
+        mappingVector.push_back(m);
+        
+        MAPAXIS(CJoystickDevice::AXIS_RY, CJoystickDevice::AXIS_Y); // Y axis is right pedal (inverted)
+        mappingVector.push_back(m);
+        
+        MAPAXIS(CJoystickDevice::AXIS_RZ, CJoystickDevice::AXIS_RZ); // RZ axis is rudder
+        mappingVector.push_back(m);
+
+
+        mapping[rudderGUID] = mappingVector;
+    }
+
+    return it->second.SetDeviceMapping(mapping);
 }
-

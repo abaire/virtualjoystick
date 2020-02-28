@@ -34,29 +34,12 @@ static BOOL CALLBACK EnumJoysticksForFrontend(const DIDEVICEINSTANCE* inst, VOID
 
 //= F U N C T I O N S =========================================================================
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
-CDriverInterface::CDriverInterface(void) :
-    m_deviceName()
-    , m_driverHandle(INVALID_HANDLE_VALUE)
-    , m_updateThreadHandle(INVALID_HANDLE_VALUE)
-    , m_updateThreadRunning(FALSE)
-    , m_updateLoopDelay(DEFAULT_LOOP_DELAY)
-    , m_inputDeviceVector()
-{
-}
-
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
 CDriverInterface::CDriverInterface(const std::string& deviceName) :
     m_deviceName(deviceName)
     , m_driverHandle(INVALID_HANDLE_VALUE)
     , m_updateThreadHandle(INVALID_HANDLE_VALUE)
     , m_updateThreadRunning(FALSE)
     , m_updateLoopDelay(DEFAULT_LOOP_DELAY)
-    , m_inputDeviceVector()
 {
     m_driverHandle = CreateFile(deviceName.c_str(),
                                 GENERIC_READ | GENERIC_WRITE,
@@ -67,10 +50,14 @@ CDriverInterface::CDriverInterface(const std::string& deviceName) :
                                 NULL);
 }
 
+CDriverInterface::CDriverInterface() :
+    m_driverHandle(INVALID_HANDLE_VALUE)
+    , m_updateThreadHandle(INVALID_HANDLE_VALUE)
+    , m_updateThreadRunning(FALSE)
+    , m_updateLoopDelay(DEFAULT_LOOP_DELAY)
+{
+}
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
 BOOL CDriverInterface::RunUpdateThread(void)
 {
     if (m_driverHandle == INVALID_HANDLE_VALUE ||
@@ -83,9 +70,6 @@ BOOL CDriverInterface::RunUpdateThread(void)
     return m_updateThreadHandle != INVALID_HANDLE_VALUE;
 }
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
 BOOL CDriverInterface::ExitUpdateThread(void)
 {
     if (m_driverHandle == INVALID_HANDLE_VALUE)
@@ -105,9 +89,6 @@ BOOL CDriverInterface::ExitUpdateThread(void)
     return TRUE;
 }
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
 void CDriverInterface::CloseDriverHandle(void)
 {
     if (m_driverHandle == INVALID_HANDLE_VALUE)
@@ -118,9 +99,6 @@ void CDriverInterface::CloseDriverHandle(void)
 }
 
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
 BOOL CDriverInterface::OpenDirectXHandle(void)
 {
     // Pop open dinput and grab our joysticks
@@ -135,10 +113,6 @@ BOOL CDriverInterface::OpenDirectXHandle(void)
     return TRUE;
 }
 
-
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
 DWORD CDriverInterface::UpdateThreadProc(void)
 {
     if (!m_pDI)
@@ -275,9 +249,6 @@ DWORD CDriverInterface::UpdateThreadProc(void)
 }
 
 
-//-------------------------------------------------------------------------------------------
-//	EnumerateDevices
-//-------------------------------------------------------------------------------------------
 BOOL CDriverInterface::EnumerateDevices(DeviceEnumCB cb)
 {
     BOOL releaseAfterOp = FALSE;
@@ -291,14 +262,13 @@ BOOL CDriverInterface::EnumerateDevices(DeviceEnumCB cb)
         return FALSE;
 
     if (releaseAfterOp)
-    SAFE_RELEASE(m_pDI);
+    {
+        SAFE_RELEASE(m_pDI);
+    }
 
     return TRUE;
 }
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
 static BOOL CALLBACK EnumJoysticksForFrontend(const DIDEVICEINSTANCE* inst, VOID* pContext)
 {
     CDriverInterface::DeviceEnumCB cb = CDriverInterface::DeviceEnumCB(pContext);
@@ -330,78 +300,16 @@ static BOOL CALLBACK EnumJoysticksForFrontend(const DIDEVICEINSTANCE* inst, VOID
 }
 
 
-//-------------------------------------------------------------------------------------------
-//	EnumJoysticksCB
-//-------------------------------------------------------------------------------------------
 BOOL CDriverInterface::EnumJoysticksCB(const DIDEVICEINSTANCE* inst)
 {
-#define MAP( db, di, sb, si )  m.destBlock = db, m.destIndex = di, m.srcBlock = sb, m.srcIndex = si, m.invert = FALSE
-#define MAPAXIS( di, si ) m.destBlock = m.srcBlock = CJoystickDevice::DS_AXIS, m.destIndex = di, m.srcIndex = si, m.invert = FALSE
-#define MAPBUTTON( index )  m.destBlock = m.srcBlock = CJoystickDevice::DS_BUTTON, m.destIndex = m.srcIndex = index, m.invert = FALSE
-    CJoystickDevice::DeviceMapping m;
-
-    if (inst->guidInstance == m_joystickGUID)
+    DeviceIDMapping::iterator it = m_deviceGUIDMapping.find(inst->guidInstance);
+    if (it == m_deviceGUIDMapping.end())
     {
-        CJoystickDevice dev(m_pDI, *inst);
-
-        MAPAXIS(CJoystickDevice::AXIS_X, CJoystickDevice::AXIS_X);
-        dev.AddMapping(m);
-
-        MAPAXIS(CJoystickDevice::AXIS_Y, CJoystickDevice::AXIS_Y);
-        dev.AddMapping(m);
-
-        MAPAXIS(CJoystickDevice::AXIS_Z, CJoystickDevice::AXIS_S0);
-        dev.AddMapping(m);
-
-        MAPAXIS(CJoystickDevice::AXIS_S0, CJoystickDevice::AXIS_S1);
-        dev.AddMapping(m);
-
-        MAPAXIS(CJoystickDevice::AXIS_S1, CJoystickDevice::AXIS_RZ);
-        dev.AddMapping(m);
-
-        // Map buttons
-        for (UINT32 i = 0; i < 64; ++i)
-        {
-            MAPBUTTON(i);
-            dev.AddMapping(m);
-        }
-
-        // Map our POV's
-#ifdef HATS_AS_BUTTONS
-        // Clear the old button mappings
-        MAPBUTTON(HAT_1_AS_BUTTONS_OFFSET);
-        dev.ClearMapping(m);
-        MAPBUTTON(HAT_1_AS_BUTTONS_OFFSET + 1);
-        dev.ClearMapping(m);
-        MAPBUTTON(HAT_1_AS_BUTTONS_OFFSET + 2);
-        dev.ClearMapping(m);
-        MAPBUTTON(HAT_1_AS_BUTTONS_OFFSET + 3);
-        dev.ClearMapping(m);
-
-        MAP(CJoystickDevice::DS_BUTTON, HAT_1_AS_BUTTONS_OFFSET, CJoystickDevice::DS_POV, 0);
-        dev.AddMapping(m);
-#else
-        MAP(CJoystickDevice::DS_POV, 0, CJoystickDevice::DS_POV, 0);
-        dev.AddMapping(m);
-#endif
-
-        m_inputDeviceVector.push_back(dev);
+        return DIENUM_CONTINUE;
     }
-    else if (inst->guidInstance == m_rudderGUID)
-    {
-        CJoystickDevice dev(m_pDI, *inst);
 
-        MAPAXIS(CJoystickDevice::AXIS_RX, CJoystickDevice::AXIS_X); // X axis is left pedal (inverted)
-        dev.AddMapping(m);
-
-        MAPAXIS(CJoystickDevice::AXIS_RY, CJoystickDevice::AXIS_Y); // Y axis is right pedal (inverted)
-        dev.AddMapping(m);
-
-        MAPAXIS(CJoystickDevice::AXIS_RZ, CJoystickDevice::AXIS_RZ); // RZ axis is rudder
-        dev.AddMapping(m);
-
-        m_inputDeviceVector.push_back(dev);
-    }
+    CJoystickDevice dev(m_pDI, *inst, it->second);
+    m_inputDeviceVector.push_back(dev);
 
     return DIENUM_CONTINUE;
 }

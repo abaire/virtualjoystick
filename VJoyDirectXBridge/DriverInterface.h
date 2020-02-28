@@ -7,48 +7,60 @@
 
 #pragma once
 
- //= I N C L U D E S ===========================================================================
+//= I N C L U D E S ===========================================================================
 #include <dinput.h>
 #include <string>
 #include <vector>
+#include <map>
 
 #include "JoystickDevice.h"
 
 
 //= C L A S S E S =============================================================================
- //! \class	CDriverInterface
- //! \brief      
+//! \class	CDriverInterface
+//! \brief      
 class CDriverInterface
 {
 public:
+
+    struct GUIDComparator
+    {
+        bool operator()(const GUID& l, const GUID& r) const
+        {
+#define CHECK_PARAM(p) if (l.p > r.p) { return FALSE; } if (l.p < r.p) { return TRUE; }
+            CHECK_PARAM(Data1)
+            CHECK_PARAM(Data2)
+            CHECK_PARAM(Data3)
+            CHECK_PARAM(Data4[0])
+            CHECK_PARAM(Data4[1])
+            CHECK_PARAM(Data4[2])
+            CHECK_PARAM(Data4[3])
+            CHECK_PARAM(Data4[4])
+            CHECK_PARAM(Data4[5])
+            CHECK_PARAM(Data4[6])
+            CHECK_PARAM(Data4[7])
+            return FALSE;
+        }
+    };
+
     typedef void (CALLBACK* DeviceEnumCB)(const char* name, const char* guid);
+    typedef std::map<GUID, CJoystickDevice::DeviceMappingVector, GUIDComparator> DeviceIDMapping;
 
 protected:
     typedef std::vector<CJoystickDevice> DeviceVector;
-    typedef std::vector<GUID> DeviceIDVector;
 
 public:
 
-    //-------------------------------------------------------------------------------------------
-    //	
-    //! \brief		
-    //-------------------------------------------------------------------------------------------
-    CDriverInterface(void);
-
-    //-------------------------------------------------------------------------------------------
-    //	
-    //! \brief		
-    //-------------------------------------------------------------------------------------------
     CDriverInterface(const std::string& deviceName);
+    CDriverInterface();
 
     //-------------------------------------------------------------------------------------------
     //	
     //! \brief		
     //-------------------------------------------------------------------------------------------
-    inline BOOL SetDevicesToRegister(const GUID& joystickGUID, const GUID& rudderGUID) {
-        m_joystickGUID = joystickGUID;
-        m_rudderGUID = rudderGUID;
-
+    inline BOOL SetDeviceMapping(const DeviceIDMapping& deviceMap)
+    {
+        m_deviceGUIDMapping = deviceMap;
         return TRUE;
     }
 
@@ -70,10 +82,6 @@ public:
     //-------------------------------------------------------------------------------------------
     BOOL ExitUpdateThread(void);
 
-
-    std::string& DeviceName(void) { return m_deviceName; }
-    const std::string& DeviceName(void) const { return m_deviceName; }
-
     HANDLE& DriverHandle(void) { return m_driverHandle; }
     const HANDLE& DriverHandle(void) const { return m_driverHandle; }
 
@@ -86,7 +94,11 @@ protected:
     //! \brief		
     //-------------------------------------------------------------------------------------------
     DWORD UpdateThreadProc(void);
-    static DWORD WINAPI UpdateThreadProc(LPVOID driverInterface) { return ((CDriverInterface*)driverInterface)->UpdateThreadProc(); }
+
+    static DWORD WINAPI UpdateThreadProc(LPVOID driverInterface)
+    {
+        return ((CDriverInterface*)driverInterface)->UpdateThreadProc();
+    }
 
     //-------------------------------------------------------------------------------------------
     //	EnumJoysticksCB
@@ -94,24 +106,25 @@ protected:
     //!           creates the physical JoystickDevice wrapper instances with appropriate mappings
     //-------------------------------------------------------------------------------------------
     BOOL EnumJoysticksCB(const DIDEVICEINSTANCE* inst);
-    static BOOL CALLBACK EnumJoysticksCB(const DIDEVICEINSTANCE* inst, VOID* pContext) { return ((CDriverInterface*)pContext)->EnumJoysticksCB(inst); }
+
+    static BOOL CALLBACK EnumJoysticksCB(const DIDEVICEINSTANCE* inst, VOID* pContext)
+    {
+        return ((CDriverInterface*)pContext)->EnumJoysticksCB(inst);
+    }
 
     BOOL OpenDirectXHandle(void);
 
 protected:
-    std::string             m_deviceName;
-    HANDLE                  m_driverHandle;
+    std::string m_deviceName;
+    HANDLE m_driverHandle;
 
-    HANDLE                  m_updateThreadHandle;
+    HANDLE m_updateThreadHandle;
 
-    volatile BOOL           m_updateThreadRunning;
+    volatile BOOL m_updateThreadRunning;
 
-    DWORD                   m_updateLoopDelay;
+    DWORD m_updateLoopDelay;
 
-    static LPDIRECTINPUT8   m_pDI;
-    DeviceVector            m_inputDeviceVector;
-
-    GUID                    m_joystickGUID;
-    GUID                    m_rudderGUID;
+    static LPDIRECTINPUT8 m_pDI;
+    DeviceVector m_inputDeviceVector;
+    DeviceIDMapping m_deviceGUIDMapping;
 };
-
