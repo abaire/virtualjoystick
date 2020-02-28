@@ -1,0 +1,12 @@
+*.user
+*.obj
+*.log
+*.pdb
+*.ncb
+obj/
+
+.vs/
+x64/
+
+app/Debug
+driver/Debug
