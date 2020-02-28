@@ -46,7 +46,7 @@ typedef struct _DEVICE_REPORT
     INT16 Slider[4];
     INT16 Dial[4];
 
-    INT16  POV[4];
+    INT8  POV[4];
 
     UCHAR Button[16];  // 128 button bits
 } DEVICE_REPORT, * PDEVICE_REPORT;
