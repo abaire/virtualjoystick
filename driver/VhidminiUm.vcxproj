@@ -184,6 +184,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="HIDReportDescriptor.c" />
     <ClCompile Include="util.c" />
     <ClCompile Include="vjoyum.c" />
     <ResourceCompile Include="vjoyum.rc" />
@@ -198,6 +199,7 @@
     <None Exclude="@(None)" Include="*.def;*.bat;*.hpj;*.asmx" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="util.h" />
     <ClInclude Include="HIDReportDescriptor.h" />
     <ClInclude Exclude="@(ClInclude)" Include="vjoyum.h" />
   </ItemGroup>

@@ -25,6 +25,9 @@
     <ClCompile Include="vjoyum.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="HIDReportDescriptor.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="vjoyum.rc">
@@ -36,6 +39,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="HIDReportDescriptor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

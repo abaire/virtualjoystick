@@ -1,18 +1,45 @@
 #include "vjoyum.h"
+#include "common.h"
+#include "util.h"
 #include "HIDReportDescriptor.h"
 
-#if DBG
 #define T_ERROR         DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL
 #define T_WARNING       DPFLTR_IHVDRIVER_ID, DPFLTR_WARNING_LEVEL
 #define T_TRACE         DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL
 #define T_INFO          DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL
-#else
-#define T_ERROR
-#define T_WARNING
-#define T_TRACE
-#define T_INFO
-#endif
 
+#define DUMP_DEVICE_REPORT( _v_ ) KdPrintEx(( \
+    T_WARNING, \
+    "\tX: 0x%X\n" \
+    "\tY: 0x%X\n" \
+    "\tZ: 0x%X\n" \
+    "\trX: 0x%X\n" \
+    "\trY: 0x%X\n" \
+    "\trZ: 0x%X\n" \
+    "\tDial[0]: 0x%X\n" \
+    "\tDial[1]: 0x%X\n" \
+    "\tButton[0]: 0x%X\n" \
+    "\tButton[1]: 0x%X\n" \
+    "\tButton[2]: 0x%X\n" \
+    "\tButton[3]: 0x%X\n" \
+    "\tButton[4]: 0x%X\n" \
+    "\tButton[5]: 0x%X\n" \
+    , ((PDEVICE_REPORT)(_v_))->X \
+    , ((PDEVICE_REPORT)(_v_))->Y \
+    , ((PDEVICE_REPORT)(_v_))->Z \
+    , ((PDEVICE_REPORT)(_v_))->rX \
+    , ((PDEVICE_REPORT)(_v_))->rY \
+    , ((PDEVICE_REPORT)(_v_))->rZ \
+    , ((PDEVICE_REPORT)(_v_))->Slider[0] \
+    , ((PDEVICE_REPORT)(_v_))->Slider[1] \
+    , ((PDEVICE_REPORT)(_v_))->Button[0] \
+    , ((PDEVICE_REPORT)(_v_))->Button[1] \
+    , ((PDEVICE_REPORT)(_v_))->Button[2] \
+    , ((PDEVICE_REPORT)(_v_))->Button[3] \
+    , ((PDEVICE_REPORT)(_v_))->Button[4] \
+    , ((PDEVICE_REPORT)(_v_))->Button[5] ))
+
+static EVT_WDF_DRIVER_DEVICE_ADD EvtDeviceAdd;
 
 static NTSTATUS ServiceJoystickReadReportRequest(
     _In_ WDFREQUEST readReportReq,
@@ -103,7 +130,7 @@ Return Value:
     return status;
 }
 
-NTSTATUS
+static NTSTATUS
 EvtDeviceAdd(
     _In_ WDFDRIVER Driver,
     _Inout_ PWDFDEVICE_INIT DeviceInit
@@ -191,8 +218,7 @@ Return Value:
 
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL EvtIoDeviceControl;
 
-NTSTATUS
-QueueCreate(
+NTSTATUS QueueCreate(
     _In_ WDFDEVICE Device,
     _Out_ WDFQUEUE* Queue
 )
@@ -250,14 +276,12 @@ Return Value:
     queueContext = GetQueueContext(queue);
     queueContext->Queue = queue;
     queueContext->DeviceContext = GetDeviceContext(Device);
-    queueContext->OutputReport = 0;
 
     *Queue = queue;
     return status;
 }
 
-VOID
-EvtIoDeviceControl(
+VOID EvtIoDeviceControl(
     _In_ WDFQUEUE Queue,
     _In_ WDFREQUEST Request,
     _In_ size_t OutputBufferLength,
@@ -514,7 +538,7 @@ Return Value:
         KdPrint((
             "WriteReport: RequestGetHidXferPacket_ToWriteToDevice failed 0x%X\n",
             status
-            ));
+        ));
         return status;
     }
 
@@ -529,7 +553,7 @@ Return Value:
             if (transferPacket.reportBufferLen != sizeof(DEVICE_PACKET))
             {
                 KdPrint((
-                    "WriteReport: Report of invalid size - %ld != %d\n",
+                    "WriteReport: Report of invalid size - %ld != %lld\n",
                     transferPacket.reportBufferLen,
                     sizeof(DEVICE_PACKET)
                 ));
@@ -538,40 +562,9 @@ Return Value:
 
             WDFREQUEST readReportReq;
             updatePacket = (PDEVICE_PACKET)transferPacket.reportBuffer;
-            
-                      #define DUMP_DEVICE_REPORT( _v_ ) \
-                        KdPrintEx(( T_ERROR, \
-                                    "\tX: 0x%X\n" \
-                                      "\tY: 0x%X\n" \
-                                      "\tZ: 0x%X\n" \
-                                      "\trX: 0x%X\n" \
-                                      "\trY: 0x%X\n" \
-                                      "\trZ: 0x%X\n" \
-                                      "\tDial[0]: 0x%X\n" \
-                                      "\tDial[1]: 0x%X\n" \
-                                      "\tButton[0]: 0x%X\n" \
-                                      "\tButton[1]: 0x%X\n" \
-                                      "\tButton[2]: 0x%X\n" \
-                                      "\tButton[3]: 0x%X\n" \
-                                      "\tButton[4]: 0x%X\n" \
-                                      "\tButton[5]: 0x%X\n" \
-                                      , ((PDEVICE_REPORT)(_v_))->X \
-                                      , ((PDEVICE_REPORT)(_v_))->Y \
-                                      , ((PDEVICE_REPORT)(_v_))->Z \
-                                      , ((PDEVICE_REPORT)(_v_))->rX \
-                                      , ((PDEVICE_REPORT)(_v_))->rY \
-                                      , ((PDEVICE_REPORT)(_v_))->rZ \
-                                      , ((PDEVICE_REPORT)(_v_))->Slider[0] \
-                                      , ((PDEVICE_REPORT)(_v_))->Slider[1] \
-                                      , ((PDEVICE_REPORT)(_v_))->Button[0] \
-                                      , ((PDEVICE_REPORT)(_v_))->Button[1] \
-                                      , ((PDEVICE_REPORT)(_v_))->Button[2] \
-                                      , ((PDEVICE_REPORT)(_v_))->Button[3] \
-                                      , ((PDEVICE_REPORT)(_v_))->Button[4] \
-                                      , ((PDEVICE_REPORT)(_v_))->Button[5] ))
-    
-                      DUMP_DEVICE_REPORT( &updatePacket->report );
-          
+
+            DUMP_DEVICE_REPORT(&updatePacket->report);
+
             // See if there's a valid request pending a response
             status = WdfIoQueueRetrieveNextRequest(QueueContext->DeviceContext->ManualQueue, &readReportReq);
             if (!NT_SUCCESS(status))
@@ -581,7 +574,6 @@ Return Value:
             }
             ULONG bytesWritten;
 
-            //updatePacket->id = REPORTID_JOYSTICK;
             ServiceJoystickReadReportRequest(readReportReq, updatePacket, &bytesWritten);
 
             // Report back to the caller that we've written bytes
@@ -598,52 +590,7 @@ Return Value:
 }
 
 
-//-------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------
-static NTSTATUS ServiceJoystickReadReportRequest(
-    _In_ WDFREQUEST readReportReq,
-    _In_ PDEVICE_PACKET pPacket,
-    _Out_ ULONG* bytesWritten
-)
-{
-    PDEVICE_PACKET outputReportBuffer;
-    size_t outputBytesAvailable = 0;
-    size_t reportLen = sizeof(*pPacket);
-    NTSTATUS status;
-
-    *bytesWritten = 0;
-
-    // Grab the output buffer so we can copy our report into it and complete it
-    status = WdfRequestRetrieveOutputBuffer(readReportReq,
-                                            reportLen,
-                                            &outputReportBuffer,
-                                            &outputBytesAvailable);
-    if (!NT_SUCCESS(status))
-    {
-        return status;
-    }
-
-    if (outputBytesAvailable < reportLen)
-    {
-        KdPrintEx((T_ERROR, "ServiceJoystickReadReportRequest: output buffer size too small\n"));
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
-
-    KdPrintEx((T_ERROR, "Output bytes avail: %ld", outputBytesAvailable));
-
-    // Copy the report into the output buffer and complete the outstanding read request
-    RtlCopyMemory(outputReportBuffer, pPacket, reportLen);
-    outputReportBuffer->id = REPORTID_JOYSTICK;
-
-    WdfRequestCompleteWithInformation(readReportReq, status, reportLen);
-
-    *bytesWritten = (ULONG)reportLen;
-
-    return STATUS_SUCCESS;
-}
-
-NTSTATUS
-GetStringId(
+NTSTATUS GetStringId(
     _In_ WDFREQUEST Request,
     _Out_ ULONG* StringId,
     _Out_ ULONG* LanguageId
@@ -679,7 +626,7 @@ Return Value:
     status = WdfRequestRetrieveInputMemory(Request, &inputMemory);
     if (!NT_SUCCESS(status))
     {
-        KdPrint(("WdfRequestRetrieveInputMemory failed 0x%x\n",status));
+        KdPrint(("WdfRequestRetrieveInputMemory failed 0x%x\n", status));
         return status;
     }
     inputBuffer = WdfMemoryGetBuffer(inputMemory, &inputBufferLength);
@@ -712,10 +659,7 @@ Return Value:
 }
 
 
-NTSTATUS
-GetIndexedString(
-    _In_ WDFREQUEST Request
-)
+NTSTATUS GetIndexedString(_In_ WDFREQUEST Request)
 /*++
 
 Routine Description:
@@ -736,30 +680,24 @@ Return Value:
     ULONG languageId, stringIndex;
 
     status = GetStringId(Request, &stringIndex, &languageId);
-
-    // While we don't use the language id, some minidrivers might.
-    //
     UNREFERENCED_PARAMETER(languageId);
 
     if (NT_SUCCESS(status))
     {
-        if (stringIndex != VHIDMINI_DEVICE_STRING_INDEX)
+        if (stringIndex != VJOYUM_DEVICE_STRING_INDEX)
         {
             status = STATUS_INVALID_PARAMETER;
             KdPrint(("GetString: unkown string index %d\n", stringIndex));
             return status;
         }
 
-        status = RequestCopyFromBuffer(Request, VHIDMINI_DEVICE_STRING, sizeof(VHIDMINI_DEVICE_STRING));
+        status = RequestCopyFromBuffer(Request, VJOYUM_DEVICE_STRING, sizeof(VJOYUM_DEVICE_STRING));
     }
     return status;
 }
 
 
-NTSTATUS
-GetString(
-    _In_ WDFREQUEST Request
-)
+NTSTATUS GetString(_In_ WDFREQUEST Request)
 /*++
 
 Routine Description:
@@ -795,16 +733,16 @@ Return Value:
     switch (stringId)
     {
     case HID_STRING_ID_IMANUFACTURER:
-        stringSizeCb = sizeof(VHIDMINI_MANUFACTURER_STRING);
-        string = VHIDMINI_MANUFACTURER_STRING;
+        stringSizeCb = sizeof(VJOYUM_MANUFACTURER_STRING);
+        string = VJOYUM_MANUFACTURER_STRING;
         break;
     case HID_STRING_ID_IPRODUCT:
-        stringSizeCb = sizeof(VHIDMINI_PRODUCT_STRING);
-        string = VHIDMINI_PRODUCT_STRING;
+        stringSizeCb = sizeof(VJOYUM_PRODUCT_STRING);
+        string = VJOYUM_PRODUCT_STRING;
         break;
     case HID_STRING_ID_ISERIALNUMBER:
-        stringSizeCb = sizeof(VHIDMINI_SERIAL_NUMBER_STRING);
-        string = VHIDMINI_SERIAL_NUMBER_STRING;
+        stringSizeCb = sizeof(VJOYUM_SERIAL_NUMBER_STRING);
+        string = VJOYUM_SERIAL_NUMBER_STRING;
         break;
     default:
         status = STATUS_INVALID_PARAMETER;
@@ -816,135 +754,44 @@ Return Value:
     return status;
 }
 
-
-NTSTATUS
-ManualQueueCreate(
-    _In_ WDFDEVICE Device,
-    _Out_ WDFQUEUE* Queue
+static NTSTATUS ServiceJoystickReadReportRequest(
+    _In_ WDFREQUEST readReportReq,
+    _In_ PDEVICE_PACKET pPacket,
+    _Out_ ULONG* bytesWritten
 )
-/*++
-Routine Description:
-
-    This function creates a manual I/O queue to receive IOCTL_HID_READ_REPORT
-    forwarded from the device's default queue handler.
-
-    It also creates a periodic timer to check the queue and complete any pending
-    request with data from the device. Here timer expiring is used to simulate
-    a hardware event that new data is ready.
-
-    The workflow is like this:
-
-    - Hidclass.sys sends an ioctl to the miniport to read input report.
-
-    - The request reaches the driver's default queue. As data may not be avaiable
-      yet, the request is forwarded to a second manual queue temporarily.
-
-    - Later when data is ready (as simulated by timer expiring), the driver
-      checks for any pending request in the manual queue, and then completes it.
-
-    - Hidclass gets notified for the read request completion and return data to
-      the caller.
-
-    On the other hand, for IOCTL_HID_WRITE_REPORT request, the driver simply
-    sends the request to the hardware (as simulated by storing the data at
-    DeviceContext->DeviceData) and completes the request immediately. There is
-    no need to use another queue for write operation.
-
-Arguments:
-
-    Device - Handle to a framework device object.
-
-    Queue - Output pointer to a framework I/O queue handle, on success.
-
-Return Value:
-
-    NTSTATUS
-
---*/
 {
+    PDEVICE_PACKET outputReportBuffer;
+    size_t outputBytesAvailable = 0;
+    size_t reportLen = sizeof(*pPacket);
     NTSTATUS status;
-    WDF_IO_QUEUE_CONFIG queueConfig;
-    WDF_OBJECT_ATTRIBUTES queueAttributes;
-    WDFQUEUE queue;
-    PMANUAL_QUEUE_CONTEXT queueContext;
 
-    WDF_IO_QUEUE_CONFIG_INIT(
-        &queueConfig,
-        WdfIoQueueDispatchManual);
-    queueConfig.PowerManaged = WdfFalse;
+    *bytesWritten = 0;
 
-    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(
-        &queueAttributes,
-        MANUAL_QUEUE_CONTEXT);
-
-    status = WdfIoQueueCreate(
-        Device,
-        &queueConfig,
-        &queueAttributes,
-        &queue);
-
+    status = WdfRequestRetrieveOutputBuffer(
+        readReportReq,
+        reportLen,
+        &outputReportBuffer,
+        &outputBytesAvailable);
     if (!NT_SUCCESS(status))
     {
-        KdPrint(("WdfIoQueueCreate failed 0x%x\n",status));
         return status;
     }
 
-    queueContext = GetManualQueueContext(queue);
-    queueContext->Queue = queue;
-    queueContext->DeviceContext = GetDeviceContext(Device);
+    if (outputBytesAvailable < reportLen)
+    {
+        KdPrintEx((T_ERROR, "ServiceJoystickReadReportRequest: output buffer size too small\n"));
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
 
-    *Queue = queue;
+    KdPrintEx((T_ERROR, "Output bytes avail: %lld", outputBytesAvailable));
 
-    return status;
+    // Copy the report into the output buffer and complete the outstanding read request
+    RtlCopyMemory(outputReportBuffer, pPacket, reportLen);
+    outputReportBuffer->id = REPORTID_JOYSTICK;
+
+    WdfRequestCompleteWithInformation(readReportReq, status, reportLen);
+
+    *bytesWritten = (ULONG)reportLen;
+
+    return STATUS_SUCCESS;
 }
-
-// void
-// EvtTimerFunc(
-//     _In_ WDFTIMER Timer
-// )
-// /*++
-// Routine Description:
-//
-//     This periodic timer callback routine checks the device's manual queue and
-//     completes any pending request with data from the device.
-//
-// Arguments:
-//
-//     Timer - Handle to a timer object that was obtained from WdfTimerCreate.
-//
-// Return Value:
-//
-//     VOID
-//
-// --*/
-// {
-//     NTSTATUS status;
-//     WDFQUEUE queue;
-//     PMANUAL_QUEUE_CONTEXT queueContext;
-//     WDFREQUEST request;
-//     HIDMINI_INPUT_REPORT readReport;
-//
-//     KdPrint(("EvtTimerFunc\n"));
-//
-//     queue = (WDFQUEUE)WdfTimerGetParentObject(Timer);
-//     queueContext = GetManualQueueContext(queue);
-//
-//     //
-//     // see if we have a request in manual queue
-//     //
-//     status = WdfIoQueueRetrieveNextRequest(
-//         queueContext->Queue,
-//         &request);
-//
-//     if (NT_SUCCESS(status))
-//     {
-//         readReport.ReportId = REPORTID_VENDOR;
-//         readReport.Data = queueContext->DeviceContext->DeviceData;
-//
-//         status = RequestCopyFromBuffer(request,
-//                                        &readReport,
-//                                        sizeof(readReport));
-//
-//         WdfRequestComplete(request, status);
-//     }
-// }

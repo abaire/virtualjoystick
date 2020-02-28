@@ -16,23 +16,21 @@ Environment:
 
 --*/
 
-#ifdef _KERNEL_MODE
-#include <ntddk.h>
-#else
+#pragma once
+
 #include <windows.h>
-#endif
-
 #include <wdf.h>
+#include <hidport.h>
 
-#include <hidport.h>  // located in $(DDK_INC_PATH)/wdm
+#include "HIDReportDescriptor.h"
 
-#include "common.h"
+#define VJOYUM_MANUFACTURER_STRING    L"BearBrains Inc."
+#define VJOYUM_PRODUCT_STRING         L"Virtual Joystick Multiplexer"
+#define VJOYUM_SERIAL_NUMBER_STRING   L"123123123"
+#define VJOYUM_DEVICE_STRING          L"Virtual Joystick Multiplexer device"
+#define VJOYUM_DEVICE_STRING_INDEX    5
 
-typedef UCHAR HID_REPORT_DESCRIPTOR, *PHID_REPORT_DESCRIPTOR;
-
-DRIVER_INITIALIZE DriverEntry;
-EVT_WDF_DRIVER_DEVICE_ADD EvtDeviceAdd;
-EVT_WDF_TIMER EvtTimerFunc;
+#define HIDVJOY_VERSION         0x0101
 
 typedef struct _DEVICE_CONTEXT
 {
@@ -52,7 +50,6 @@ typedef struct _QUEUE_CONTEXT
 {
     WDFQUEUE Queue;
     PDEVICE_CONTEXT DeviceContext;
-    UCHAR OutputReport;
 } QUEUE_CONTEXT, *PQUEUE_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(QUEUE_CONTEXT, GetQueueContext);
@@ -63,19 +60,7 @@ QueueCreate(
     _Out_ WDFQUEUE* Queue
 );
 
-typedef struct _MANUAL_QUEUE_CONTEXT
-{
-    WDFQUEUE Queue;
-    PDEVICE_CONTEXT DeviceContext;
-} MANUAL_QUEUE_CONTEXT, *PMANUAL_QUEUE_CONTEXT;
-
-WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(MANUAL_QUEUE_CONTEXT, GetManualQueueContext);
-
-NTSTATUS
-ManualQueueCreate(
-    _In_ WDFDEVICE Device,
-    _Out_ WDFQUEUE* Queue
-);
+DRIVER_INITIALIZE                   DriverEntry;
 
 NTSTATUS
 RequestCopyFromBuffer(
@@ -84,22 +69,3 @@ RequestCopyFromBuffer(
     _When_(NumBytesToCopyFrom == 0, __drv_reportError(NumBytesToCopyFrom cannot be zero))
     _In_ size_t NumBytesToCopyFrom
 );
-
-NTSTATUS
-RequestGetHidXferPacket_ToReadFromDevice(
-    _In_ WDFREQUEST Request,
-    _Out_ HID_XFER_PACKET* Packet
-);
-
-NTSTATUS
-RequestGetHidXferPacket_ToWriteToDevice(
-    _In_ WDFREQUEST Request,
-    _Out_ HID_XFER_PACKET* Packet
-);
-
-//
-// Misc definitions
-//
-#define CONTROL_FEATURE_REPORT_ID   0x01
-
-#define HIDVJOY_VERSION         0x0101
