@@ -30,20 +30,24 @@ Environment:
 
 #include <pshpack1.h>
 
+// Contents must match ReportDescriptor in HIDReportDescriptor. 
 typedef struct _DEVICE_REPORT
 {
     INT16 X;
     INT16 Y;
-    INT16 Z;
+
+    INT16 Throttle;
+    INT16 Rudder;
 
     INT16 rX;
     INT16 rY;
     INT16 rZ;
 
-    INT16 Slider[2];  // 2 slider/dial axes
-    INT8  POV[4];     // 4 POV's (valid values are -1,0,1,2,3,4,5,6,7)
+    INT16 Slider[4];
+    INT16 Dial[4];
+    INT8  POV[8];  // POV's (valid values are -1,0,1,2,3,4,5,6,7)
 
-    UCHAR Button[16]; // 128 button bits
+    UCHAR Button[16];  // 128 button bits
 } DEVICE_REPORT, * PDEVICE_REPORT;
 
 typedef struct _Device_Packet

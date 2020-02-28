@@ -173,7 +173,7 @@ DWORD CDriverInterface::UpdateThreadProc(void)
     // Device packet to send via HidD_SetFeature
     DEVICE_PACKET packet;
     memset(&packet, 0, sizeof(packet));
-    packet.id = REPORTID_VENDOR; // If the driver supports more than one report type we need to set the ID
+    packet.id = REPORTID_VENDOR;
 
     while (m_updateThreadRunning)
     {

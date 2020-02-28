@@ -22,7 +22,7 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
     0xc0, //   END_COLLECTION
 
     0x05, USAGE_PAGE_SIMULATION_CONTROLS, //   USAGE_PAGE (Simulation Controls)
-    0x09, USAGE_RUDDER, //   USAGE (Throttle)
+    0x09, USAGE_THROTTLE, //   USAGE (Throttle)
     0x16, 0x01, 0x80, //     LOGICAL_MINIMUM (-32767)
     0x26, 0xFF, 0x7F, //     LOGICAL_MAXIMUM (32767)
     0x75, 0x10, //     REPORT_SIZE (16)
@@ -30,7 +30,7 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
     0x81, 0x02, //   INPUT (Data,Var,Abs)
 
     0x05, USAGE_PAGE_SIMULATION_CONTROLS, //   USAGE_PAGE (Simulation Controls)
-    0x09, USAGE_THROTTLE, //   USAGE (Throttle)
+    0x09, USAGE_RUDDER, //   USAGE
     0x16, 0x01, 0x80, //     LOGICAL_MINIMUM (-32767)
     0x26, 0xFF, 0x7F, //     LOGICAL_MAXIMUM (32767)
     0x75, 0x10, //     REPORT_SIZE (16)
@@ -66,7 +66,7 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
     0x16, 0x01, 0x80, //     LOGICAL_MINIMUM (-32767)
     0x26, 0xFF, 0x7F, //     LOGICAL_MAXIMUM (32767)
     0x75, 0x10, //     REPORT_SIZE (16)
-    0x95, 0x01, //   REPORT_COUNT (1)
+    0x95, 4, //   REPORT_COUNT
     0x81, 0x02, //   INPUT (Data,Var,Abs)
 
     0x05, USAGE_PAGE_GENERIC_DESKTOP, //   USAGE_PAGE (generic)
@@ -74,19 +74,19 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
     0x16, 0x01, 0x80, //     LOGICAL_MINIMUM (-32767)
     0x26, 0xFF, 0x7F, //     LOGICAL_MAXIMUM (32767)
     0x75, 0x10, //     REPORT_SIZE (16)
-    0x95, 0x01, //   REPORT_COUNT (1)
+    0x95, 4, //   REPORT_COUNT
     0x81, 0x02, //   INPUT (Data,Var,Abs)
 
     0x09, USAGE_HAT_SWITCH, //   USAGE (Hat switch)
     0x15, 0, //   LOGICAL_MINIMUM (0)
     0x25, 7, //   LOGICAL_MAXIMUM (7)
     0x75, 0x08, //   REPORT_SIZE (8)
-    0x95, 0x04, //   REPORT_COUNT (4)
+    0x95, 8, //   REPORT_COUNT
     0x81, 0x02, //   INPUT (Data,Var,Abs)
 
     0x05, USAGE_PAGE_BUTTONS, //   USAGE_PAGE (Button)
     0x19, 0x01, //   USAGE_MINIMUM
-    0x29, 48, //   USAGE_MAXIMUM
+    0x29, 128, //   USAGE_MAXIMUM
     0x15, 0x00, //   LOGICAL_MINIMUM (0)
     0x25, 0x01, //   LOGICAL_MAXIMUM (1)
     0x75, 0x01, //   REPORT_SIZE (1)
@@ -98,6 +98,8 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
 
 
     //------------------ Vendor Defined ------------------------//
+    // Must match structure of _DEVICE_REPORT in common.h.
+    // Must also map to the structure described via the USAGE reports above.
     0x06, 0x00, 0xFF, // USAGE_PAGE (Vendor Defined Page 1)
     0x09, 0x01, // USAGE (Vendor Usage 1)
     0xa1, 0x01, // COLLECTION (Application)
@@ -105,19 +107,19 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
     0x16, 0x01, 0x80, //   LOGICAL_MINIMUM (-32767)
     0x26, 0xFF, 0x7F, //   LOGICAL_MAXIMUM (32767)
     0x75, 0x10, //   REPORT_SIZE (16)
-    0x95, 0x08, //   REPORT_COUNT (8)         // X, Y, Z, rX, rY, rZ, Slider0, Slider1
+    0x95, 15, //   REPORT_COUNT: X, Y, Throttle, Rudder, rX, rY, rZ, Slider[4], Dial[4]
     0x09, 0x02, //   USAGE (Vendor Usage 1)
     0x91, 0x02, //   OUTPUT (Data,Var,Abs)
     0x15, 0xFF, //   LOGICAL_MINIMUM (-1)
     0x25, 7, //   LOGICAL_MAXIMUM (7)
     0x75, 0x08, //   REPORT_SIZE (8)
-    0x95, 0x04, //   REPORT_COUNT (4)         // POV[4]
+    0x95, 8, //   REPORT_COUNT: POV[8]
     0x09, 0x02, //   USAGE (Vendor Usage 1)
     0x91, 0x02, //   OUTPUT (Data,Var,Abs)
     0x15, 0x00, //   LOGICAL_MINIMUM (0)
     0x25, 0x01, //   LOGICAL_MAXIMUM (1)
     0x75, 0x01, //   REPORT_SIZE (1)
-    0x95, 128, //   REPORT_COUNT (128)       // Buttons
+    0x95, 128, //   REPORT_COUNT: Buttons (128 bits)
     0x09, 0x02, //   USAGE (Vendor Usage 1)
     0x91, 0x02, //   OUTPUT (Data,Var,Abs)
     0xc0 // END_COLLECTION

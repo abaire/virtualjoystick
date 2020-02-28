@@ -41,7 +41,6 @@ typedef struct _DEVICE_CONTEXT
     BYTE DeviceData;
     HID_DESCRIPTOR HidDescriptor;
     PHID_REPORT_DESCRIPTOR ReportDescriptor;
-    BOOLEAN ReadReportDescFromRegistry;
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_CONTEXT, GetDeviceContext);

@@ -12,12 +12,19 @@
     T_WARNING, \
     "\tX: 0x%X\n" \
     "\tY: 0x%X\n" \
-    "\tZ: 0x%X\n" \
+    "\tThrottle: 0x%X\n" \
+    "\tRudder: 0x%X\n" \
     "\trX: 0x%X\n" \
     "\trY: 0x%X\n" \
     "\trZ: 0x%X\n" \
+    "\tSlider[0]: 0x%X\n" \
+    "\tSlider[1]: 0x%X\n" \
+    "\tSlider[2]: 0x%X\n" \
+    "\tSlider[3]: 0x%X\n" \
     "\tDial[0]: 0x%X\n" \
     "\tDial[1]: 0x%X\n" \
+    "\tDial[2]: 0x%X\n" \
+    "\tDial[3]: 0x%X\n" \
     "\tButton[0]: 0x%X\n" \
     "\tButton[1]: 0x%X\n" \
     "\tButton[2]: 0x%X\n" \
@@ -26,12 +33,19 @@
     "\tButton[5]: 0x%X\n" \
     , ((PDEVICE_REPORT)(_v_))->X \
     , ((PDEVICE_REPORT)(_v_))->Y \
-    , ((PDEVICE_REPORT)(_v_))->Z \
+    , ((PDEVICE_REPORT)(_v_))->Throttle \
+    , ((PDEVICE_REPORT)(_v_))->Rudder \
     , ((PDEVICE_REPORT)(_v_))->rX \
     , ((PDEVICE_REPORT)(_v_))->rY \
     , ((PDEVICE_REPORT)(_v_))->rZ \
     , ((PDEVICE_REPORT)(_v_))->Slider[0] \
     , ((PDEVICE_REPORT)(_v_))->Slider[1] \
+    , ((PDEVICE_REPORT)(_v_))->Slider[2] \
+    , ((PDEVICE_REPORT)(_v_))->Slider[3] \
+    , ((PDEVICE_REPORT)(_v_))->Dial[0] \
+    , ((PDEVICE_REPORT)(_v_))->Dial[1] \
+    , ((PDEVICE_REPORT)(_v_))->Dial[2] \
+    , ((PDEVICE_REPORT)(_v_))->Dial[3] \
     , ((PDEVICE_REPORT)(_v_))->Button[0] \
     , ((PDEVICE_REPORT)(_v_))->Button[1] \
     , ((PDEVICE_REPORT)(_v_))->Button[2] \
@@ -204,15 +218,8 @@ Return Value:
         return status;
     }
 
-    //
-    // Use default "HID Descriptor" (hardcoded). We will set the
-    // wReportLength memeber of HID descriptor when we read the
-    // the report descriptor either from registry or the hard-coded
-    // one.
-    //
     deviceContext->HidDescriptor = HidDescriptor;
     deviceContext->ReportDescriptor = ReportDescriptor;
-    KdPrint(("Using Hard-coded Report descriptor\n"));
     return STATUS_SUCCESS;
 }
 
@@ -325,8 +332,6 @@ Return Value:
     UNREFERENCED_PARAMETER(InputBufferLength);
 
     deviceContext = GetDeviceContext(device);
-
-    KdPrintEx((T_ERROR, "EvtIoDeviceControl: %ld 0x%X\n", IoControlCode, IoControlCode));
 
     switch (IoControlCode)
     {
@@ -552,7 +557,8 @@ Return Value:
             //  1 byte for the reportID
             if (transferPacket.reportBufferLen != sizeof(DEVICE_PACKET))
             {
-                KdPrint((
+                KdPrintEx((
+                    T_ERROR,
                     "WriteReport: Report of invalid size - %ld != %lld\n",
                     transferPacket.reportBufferLen,
                     sizeof(DEVICE_PACKET)
@@ -569,14 +575,17 @@ Return Value:
             status = WdfIoQueueRetrieveNextRequest(QueueContext->DeviceContext->ManualQueue, &readReportReq);
             if (!NT_SUCCESS(status))
             {
-                KdPrintEx((T_ERROR, "WriteReport: WdfIoQueueRetrieveNextRequest status %ld (0x%X)\n", status, status));
+                KdPrintEx((
+                    T_WARNING, 
+                    "WriteReport: WdfIoQueueRetrieveNextRequest status %ld (0x%X)\n", 
+                    status,
+                    status));
                 return status;
             }
-            ULONG bytesWritten;
 
+            ULONG bytesWritten;
             ServiceJoystickReadReportRequest(readReportReq, updatePacket, &bytesWritten);
 
-            // Report back to the caller that we've written bytes
             WdfRequestSetInformation(Request, bytesWritten);
         }
         break;
@@ -763,10 +772,10 @@ static NTSTATUS ServiceJoystickReadReportRequest(
     PDEVICE_PACKET outputReportBuffer;
     size_t outputBytesAvailable = 0;
     size_t reportLen = sizeof(*pPacket);
-    NTSTATUS status;
 
     *bytesWritten = 0;
 
+    NTSTATUS status;
     status = WdfRequestRetrieveOutputBuffer(
         readReportReq,
         reportLen,
@@ -782,8 +791,6 @@ static NTSTATUS ServiceJoystickReadReportRequest(
         KdPrintEx((T_ERROR, "ServiceJoystickReadReportRequest: output buffer size too small\n"));
         return STATUS_INSUFFICIENT_RESOURCES;
     }
-
-    KdPrintEx((T_ERROR, "Output bytes avail: %lld", outputBytesAvailable));
 
     // Copy the report into the output buffer and complete the outstanding read request
     RtlCopyMemory(outputReportBuffer, pPacket, reportLen);

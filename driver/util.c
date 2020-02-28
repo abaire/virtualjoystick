@@ -37,8 +37,7 @@ Environment:
 // The new IRP is then passed to UMDF host and driver for further processing.
 //
 
-NTSTATUS
-RequestGetHidXferPacket_ToReadFromDevice(
+NTSTATUS RequestGetHidXferPacket_ToReadFromDevice(
     _In_ WDFREQUEST Request,
     _Out_ HID_XFER_PACKET* Packet
 )
@@ -97,8 +96,7 @@ RequestGetHidXferPacket_ToReadFromDevice(
     return status;
 }
 
-NTSTATUS
-RequestGetHidXferPacket_ToWriteToDevice(
+NTSTATUS RequestGetHidXferPacket_ToWriteToDevice(
     _In_ WDFREQUEST Request,
     _Out_ HID_XFER_PACKET* Packet
 )

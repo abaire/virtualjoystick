@@ -57,7 +57,7 @@ CJoystickDevice::CJoystickDevice( LPDIRECTINPUT8 di, const DIDEVICEINSTANCE &dev
     INT_PTR base = (INT_PTR)&tmp;
     DEVPACKETAXISOFFSETS[AXIS_X] = (INT_PTR)&tmp.report.X - base;
     DEVPACKETAXISOFFSETS[AXIS_Y] = (INT_PTR)&tmp.report.Y - base;
-    DEVPACKETAXISOFFSETS[AXIS_Z] = (INT_PTR)&tmp.report.Z - base;
+    DEVPACKETAXISOFFSETS[AXIS_Z] = (INT_PTR)&tmp.report.Throttle - base;
     DEVPACKETAXISOFFSETS[AXIS_RX] = (INT_PTR)&tmp.report.rX - base;
     DEVPACKETAXISOFFSETS[AXIS_RY] = (INT_PTR)&tmp.report.rY - base;
     DEVPACKETAXISOFFSETS[AXIS_RZ] = (INT_PTR)&tmp.report.rZ - base;
