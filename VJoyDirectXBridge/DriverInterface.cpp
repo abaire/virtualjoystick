@@ -118,21 +118,16 @@ DWORD CDriverInterface::UpdateThreadProc(void)
     if (!m_pDI)
         OpenDirectXHandle();
 
-    // Get our list of input devices
     if (FAILED(m_pDI->EnumDevices(DI8DEVCLASS_GAMECTRL, EnumJoysticksCB, this, DIEDFL_ATTACHEDONLY)))
     {
         SAFE_RELEASE(m_pDI);
         return 0;
     }
 
-
     DeviceVector::iterator it = m_inputDeviceVector.begin();
     DeviceVector::iterator itEnd = m_inputDeviceVector.end();
     for (; it != itEnd; ++it)
     {
-        // Check to see if the device is mapped
-
-        // Acquire the stick
         if (!it->Acquire())
         {
             SAFE_RELEASE(m_pDI);
@@ -140,74 +135,56 @@ DWORD CDriverInterface::UpdateThreadProc(void)
         }
     }
 
-
-    // Track the number of consecutive failed setHID calls
     UINT32 numFailures = 0;
 
-    // Device packet to send via HidD_SetFeature
     DEVICE_PACKET packet;
     memset(&packet, 0, sizeof(packet));
     packet.id = REPORTID_VENDOR;
 
+    const auto numPOVs = sizeof(packet.report.POV) / sizeof(packet.report.POV[0]);
+
+    INT32 temp = 0;
+
     while (m_updateThreadRunning)
     {
         // Invalidate the POV axes
-        packet.report.POV[0] =
-            packet.report.POV[1] =
-            packet.report.POV[2] =
-            packet.report.POV[3] = -1;
+        for (size_t i = 0; i < numPOVs; ++i) {
+            packet.report.POV[i] = -1;
+        }
 
         // Fetch data from our devices into the report packet
         it = m_inputDeviceVector.begin();
         itEnd = m_inputDeviceVector.end();
-        for (; it != itEnd; ++it)
-            it->GetVirtualStateUpdatePacket(packet);
+//        for (; it != itEnd; ++it)
+//            it->GetVirtualStateUpdatePacket(packet);
 
-        /*
-          #define DUMP_DEVICE_REPORT( _v_ ) \
-            { char buffer[1024] = {0}; \
-              sprintf( buffer,  \
-                        "\tX: 0x%X\n" \
-                          "\tY: 0x%X\n" \
-                          "\tZ: 0x%X\n" \
-                          "\trX: 0x%X\n" \
-                          "\trY: 0x%X\n" \
-                          "\trZ: 0x%X\n" \
-                          "\tDial[0]: 0x%X\n" \
-                          "\tDial[1]: 0x%X\n" \
-                          "\tPOV[0]: 0x%X\n" \
-                          "\tPOV[1]: 0x%X\n" \
-                          "\tPOV[2]: 0x%X\n" \
-                          "\tPOV[3]: 0x%X\n" \
-                          "\tButton[0]: 0x%X\n" \
-                          "\tButton[1]: 0x%X\n" \
-                          "\tButton[2]: 0x%X\n" \
-                          "\tButton[3]: 0x%X\n" \
-                          "\tButton[4]: 0x%X\n" \
-                          "\tButton[5]: 0x%X\n" \
-                          , ((PDEVICE_REPORT)(_v_))->X \
-                          , ((PDEVICE_REPORT)(_v_))->Y \
-                          , ((PDEVICE_REPORT)(_v_))->Z \
-                          , ((PDEVICE_REPORT)(_v_))->rX \
-                          , ((PDEVICE_REPORT)(_v_))->rY \
-                          , ((PDEVICE_REPORT)(_v_))->rZ \
-                          , ((PDEVICE_REPORT)(_v_))->Slider[0] \
-                          , ((PDEVICE_REPORT)(_v_))->Slider[1] \
-                          , ((PDEVICE_REPORT)(_v_))->POV[0] \
-                          , ((PDEVICE_REPORT)(_v_))->POV[1] \
-                          , ((PDEVICE_REPORT)(_v_))->POV[2] \
-                          , ((PDEVICE_REPORT)(_v_))->POV[3] \
-                          , ((PDEVICE_REPORT)(_v_))->Button[0] \
-                          , ((PDEVICE_REPORT)(_v_))->Button[1] \
-                          , ((PDEVICE_REPORT)(_v_))->Button[2] \
-                          , ((PDEVICE_REPORT)(_v_))->Button[3] \
-                          , ((PDEVICE_REPORT)(_v_))->Button[4] \
-                          , ((PDEVICE_REPORT)(_v_))->Button[5] ); \
-                  OutputDebugString( buffer ); \
-            }
+        temp += 100;
+#define MAKE_VAL(offset) (temp + offset) & 0xFFFF
 
-            DUMP_DEVICE_REPORT( &packet.report );
-        */
+        packet.report.X = MAKE_VAL(10000);
+        packet.report.Y = MAKE_VAL(-10000);
+
+        packet.report.Throttle = MAKE_VAL(1000);
+        packet.report.Rudder = MAKE_VAL(15000);
+
+        packet.report.rX = MAKE_VAL(-20000);
+        packet.report.rY = MAKE_VAL(20000);
+        packet.report.rZ = MAKE_VAL(10000);
+
+        packet.report.POV[0] = 1;
+        packet.report.POV[1] = 3;
+        packet.report.POV[2] = 6;
+        packet.report.POV[3] = 0;
+
+        packet.report.Slider[0] = MAKE_VAL(0);
+        packet.report.Slider[1] = MAKE_VAL(5000);
+        packet.report.Slider[2] = MAKE_VAL(10000);
+        packet.report.Slider[3] = MAKE_VAL(15000);
+
+        packet.report.Dial[0] = MAKE_VAL(-5000);
+        packet.report.Dial[1] = MAKE_VAL(-10000);
+        packet.report.Dial[2] = MAKE_VAL(-15000);
+        packet.report.Dial[3] = MAKE_VAL(-20000);
 
         // Send the request on to the driver
         DWORD bytesWritten;

@@ -197,7 +197,7 @@ BOOL SetDeviceIDs(HANDLE attachID, const char* joystickGUIDStr, const char* rudd
         MAPAXIS(CJoystickDevice::AXIS_Y, CJoystickDevice::AXIS_Y);
         mappingVector.push_back(m);
 
-        MAPAXIS(CJoystickDevice::AXIS_Z, CJoystickDevice::AXIS_S0);
+        MAPAXIS(CJoystickDevice::AXIS_THROTTLE, CJoystickDevice::AXIS_S0);
         mappingVector.push_back(m);
 
         MAPAXIS(CJoystickDevice::AXIS_S0, CJoystickDevice::AXIS_S1);
@@ -236,6 +236,7 @@ BOOL SetDeviceIDs(HANDLE attachID, const char* joystickGUIDStr, const char* rudd
         mapping[joystickGUID] = mappingVector;
     }
 
+    if (strcmp(joystickGUIDStr, rudderGUIDStr))
     {
         GUID rudderGUID;
         ParseGUID(rudderGUID, rudderGUIDStr);

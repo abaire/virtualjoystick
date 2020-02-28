@@ -43,21 +43,27 @@ public:
     };
 
     //! \enum   AxisIndex
-    //! \brief  Defines the index of the various axes in the JOYSTATEAXISOFFSETS and DEVPACKETAXISOFFSETS arrays
+    //! \brief  Defines the index of the various axes in the JOYSTATEAXISOFFSETS
     enum AxisIndex
     {
         AXIS_X = 0,
         AXIS_Y,
-        AXIS_Z,
+        AXIS_THROTTLE,
         AXIS_RX,
         AXIS_RY,
         AXIS_RZ,
         AXIS_S0,
-        // Slider 0
         AXIS_S1,
-        // Slider 1
-    };
 
+        // These axes are particular to the virtual device.
+        AXIS_RUDDER,
+        AXIS_S2,
+        AXIS_S3,
+        AXIS_DIAL_0,
+        AXIS_DIAL_1,
+        AXIS_DIAL_2,
+        AXIS_DIAL_3,
+    };
 
     //! \struct DeviceMapping
     //! \brief  Maps a specific dinput state variable to an output slot in the virtual joystick
@@ -83,16 +89,8 @@ public:
     //-------------------------------------------------------------------------------------------
     CJoystickDevice(LPDIRECTINPUT8, const DIDEVICEINSTANCE& device, const DeviceMappingVector& deviceMapping);
 
-    //-------------------------------------------------------------------------------------------
-    //	
-    //! \brief		
-    //-------------------------------------------------------------------------------------------
     BOOL Acquire();
 
-    //-------------------------------------------------------------------------------------------
-    //	
-    //! \brief		
-    //-------------------------------------------------------------------------------------------
     inline void Release(void)
     {
         if (m_handle) m_handle->Release();
@@ -157,8 +155,6 @@ protected:
     DIJOYSTATE2 m_state; //!< The current state of the physical joystick represented by this instance
     static INT_PTR JOYSTATEAXISOFFSETS[8];
     //!< byte offset from the head of a DIJOYSTATE2 struct to the DWORD axis values
-    static INT_PTR DEVPACKETAXISOFFSETS[8];
-    //!< byte offset from the head of a DEVICE_PACKET struct to the UINT16 axis values
 
     //! Vector of mapping structure instance defining how to map the physical device state to the virtual multiplexed device
     DeviceMappingVector m_deviceMapping;
@@ -180,6 +176,70 @@ static __inline void SetButton(DEVICE_PACKET& packet, UINT32 index, BOOL val)
 }
 
 
+inline void SetReportAxis(DEVICE_REPORT& report, CJoystickDevice::AxisIndex axis, INT16 value) {
+    switch (axis) {
+    case CJoystickDevice::AxisIndex::AXIS_X:
+        report.X = value;
+        return;
+
+    case CJoystickDevice::AxisIndex::AXIS_Y:
+        report.Y = value;
+        return;
+
+            case CJoystickDevice::AxisIndex::AXIS_THROTTLE:
+                report.Throttle = value;
+                return;
+
+            case CJoystickDevice::AxisIndex::AXIS_RX:
+                report.rX = value;
+                return;
+
+            case CJoystickDevice::AxisIndex::AXIS_RY:
+                report.rY = value;
+                return;
+
+            case CJoystickDevice::AxisIndex::AXIS_RZ:
+                report.rZ = value;
+                return;
+
+            case CJoystickDevice::AxisIndex::AXIS_S0:
+                report.Slider[0] = value;
+                return;
+
+            case CJoystickDevice::AxisIndex::AXIS_S1:
+                report.Slider[1] = value;
+                return;
+
+            case CJoystickDevice::AxisIndex::AXIS_RUDDER:
+                report.Rudder = value;
+                return;
+
+            case CJoystickDevice::AxisIndex::AXIS_S2:
+                report.Slider[2] = value;
+                return;
+
+            case CJoystickDevice::AxisIndex::AXIS_S3:
+                report.Slider[3] = value;
+                return;
+
+            case CJoystickDevice::AxisIndex::AXIS_DIAL_0:
+                report.Dial[0] = value;
+                return;
+
+            case CJoystickDevice::AxisIndex::AXIS_DIAL_1:
+                report.Dial[1] = value;
+                return;
+
+            case CJoystickDevice::AxisIndex::AXIS_DIAL_2:
+                report.Dial[2] = value;
+                return;
+
+            case CJoystickDevice::AxisIndex::AXIS_DIAL_3:
+                report.Dial[3] = value;
+                return;
+    }
+}
+
 //-------------------------------------------------------------------------------------------
 //	
 //-------------------------------------------------------------------------------------------
@@ -187,6 +247,8 @@ inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(DEVICE_PACKET& packet)
 {
     if (!PollPhysicalStick())
         return FALSE;
+
+    auto& report = packet.report;
 
     // NOTE: There is a concurrency issue here that we're requiring the caller to handle. It should
     // not be permissible for the device mapping vector to be modified (via Add/Clear mapping) while
@@ -209,13 +271,13 @@ inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(DEVICE_PACKET& packet)
                 INT16 src = (INT16)*((LONG*)(((BYTE*)&m_state) + JOYSTATEAXISOFFSETS[it->srcIndex]));
                 if (it->invert)
                     src = AXIS_MAX - src;
-                *(INT16*)((BYTE*)&packet + DEVPACKETAXISOFFSETS[it->destIndex]) = src;
+                SetReportAxis(report, static_cast<CJoystickDevice::AxisIndex>(it->destIndex), src);
             }
             break;
 
             // ** DS_POV ** //
         case DS_POV:
-            packet.report.POV[it->destIndex] = MAP_RANGE(m_state.rgdwPOV[it->srcIndex]);
+            report.POV[it->destIndex] = MAP_RANGE(m_state.rgdwPOV[it->srcIndex]);
             break;
 
             // ** DS_BUTTON ** //
