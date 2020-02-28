@@ -67,7 +67,6 @@ typedef struct _MANUAL_QUEUE_CONTEXT
 {
     WDFQUEUE Queue;
     PDEVICE_CONTEXT DeviceContext;
-    WDFTIMER Timer;
 } MANUAL_QUEUE_CONTEXT, *PMANUAL_QUEUE_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(MANUAL_QUEUE_CONTEXT, GetManualQueueContext);
@@ -76,61 +75,6 @@ NTSTATUS
 ManualQueueCreate(
     _In_ WDFDEVICE Device,
     _Out_ WDFQUEUE* Queue
-);
-
-NTSTATUS
-ReadReport(
-    _In_ PQUEUE_CONTEXT QueueContext,
-    _In_ WDFREQUEST Request,
-    _Always_(_Out_)
-    BOOLEAN* CompleteRequest
-);
-
-NTSTATUS
-WriteReport(
-    _In_ PQUEUE_CONTEXT QueueContext,
-    _In_ WDFREQUEST Request
-);
-
-NTSTATUS
-GetFeature(
-    _In_ PQUEUE_CONTEXT QueueContext,
-    _In_ WDFREQUEST Request
-);
-
-NTSTATUS
-SetFeature(
-    _In_ PQUEUE_CONTEXT QueueContext,
-    _In_ WDFREQUEST Request
-);
-
-NTSTATUS
-GetInputReport(
-    _In_ PQUEUE_CONTEXT QueueContext,
-    _In_ WDFREQUEST Request
-);
-
-NTSTATUS
-SetOutputReport(
-    _In_ PQUEUE_CONTEXT QueueContext,
-    _In_ WDFREQUEST Request
-);
-
-NTSTATUS
-GetString(
-    _In_ WDFREQUEST Request
-);
-
-NTSTATUS
-GetIndexedString(
-    _In_ WDFREQUEST Request
-);
-
-NTSTATUS
-GetStringId(
-    _In_ WDFREQUEST Request,
-    _Out_ ULONG* StringId,
-    _Out_ ULONG* LanguageId
 );
 
 NTSTATUS
@@ -153,19 +97,9 @@ RequestGetHidXferPacket_ToWriteToDevice(
     _Out_ HID_XFER_PACKET* Packet
 );
 
-NTSTATUS
-CheckRegistryForDescriptor(
-    _In_ WDFDEVICE Device
-);
-
-NTSTATUS
-ReadDescriptorFromRegistry(
-    _In_ WDFDEVICE Device
-);
-
 //
 // Misc definitions
 //
 #define CONTROL_FEATURE_REPORT_ID   0x01
 
-#define HIDMINI_VERSION         0x0101
+#define HIDVJOY_VERSION         0x0101
