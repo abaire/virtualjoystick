@@ -210,9 +210,9 @@ inline void SetReportAxis(DEVICE_REPORT& report, CJoystickDevice::AxisIndex axis
                 report.Slider[1] = value;
                 return;
 
-            case CJoystickDevice::AxisIndex::AXIS_RUDDER:
-                report.Rudder = value;
-                return;
+            // case CJoystickDevice::AxisIndex::AXIS_RUDDER:
+            //     report.Rudder = value;
+            //     return;
             //
             // case CJoystickDevice::AxisIndex::AXIS_S2:
             //     report.Slider[2] = value;

@@ -37,7 +37,7 @@ typedef struct _DEVICE_REPORT
     INT16 Y;
 
     INT16 Throttle;
-    INT16 Rudder;
+    // INT16 Rudder;
 
     INT16 rX;
     INT16 rY;
