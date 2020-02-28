@@ -566,12 +566,12 @@ Return Value:
                 return STATUS_INVALID_PARAMETER;
             }
 
-            WDFREQUEST readReportReq;
             updatePacket = (PDEVICE_PACKET)transferPacket.reportBuffer;
 
             DUMP_DEVICE_REPORT(&updatePacket->report);
 
             // See if there's a valid request pending a response
+            WDFREQUEST readReportReq;
             status = WdfIoQueueRetrieveNextRequest(QueueContext->DeviceContext->ManualQueue, &readReportReq);
             if (!NT_SUCCESS(status))
             {

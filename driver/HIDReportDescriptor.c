@@ -19,7 +19,7 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
     0x75, 0x10, //     REPORT_SIZE (16)
     0x95, 0x02, //     REPORT_COUNT (2)
     0x81, 0x02, //     INPUT (Data,Var,Abs)
-    0xc0, //   END_COLLECTION
+    0xc0, //   END_COLLECTION (Pointer)
 
     0x05, USAGE_PAGE_SIMULATION_CONTROLS, //   USAGE_PAGE (Simulation Controls)
     0x09, USAGE_THROTTLE, //   USAGE (Throttle)
@@ -81,7 +81,7 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
     0x15, 0, //   LOGICAL_MINIMUM (0)
     0x25, 7, //   LOGICAL_MAXIMUM (7)
     0x75, 0x08, //   REPORT_SIZE (8)
-    0x95, 8, //   REPORT_COUNT
+    0x95, 4, //   REPORT_COUNT
     0x81, 0x02, //   INPUT (Data,Var,Abs)
 
     0x05, USAGE_PAGE_BUTTONS, //   USAGE_PAGE (Button)
@@ -94,7 +94,8 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
     0x55, 0x00, //   UNIT_EXPONENT (0)
     0x65, 0x00, //   UNIT (None)
     0x81, 0x02, //   INPUT (Data,Var,Abs)
-    0xc0, // END_COLLECTION
+
+    0xc0, // END_COLLECTION (REPORTID_JOYSTICK)
 
 
     //------------------ Vendor Defined ------------------------//
@@ -104,24 +105,28 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
     0x09, 0x01, // USAGE (Vendor Usage 1)
     0xa1, 0x01, // COLLECTION (Application)
     0x85, REPORTID_VENDOR, //   REPORT_ID (Vendor 1)
+
     0x16, 0x01, 0x80, //   LOGICAL_MINIMUM (-32767)
     0x26, 0xFF, 0x7F, //   LOGICAL_MAXIMUM (32767)
     0x75, 0x10, //   REPORT_SIZE (16)
     0x95, 15, //   REPORT_COUNT: X, Y, Throttle, Rudder, rX, rY, rZ, Slider[4], Dial[4]
     0x09, 0x02, //   USAGE (Vendor Usage 1)
     0x91, 0x02, //   OUTPUT (Data,Var,Abs)
+
     0x15, 0xFF, //   LOGICAL_MINIMUM (-1)
     0x25, 7, //   LOGICAL_MAXIMUM (7)
     0x75, 0x08, //   REPORT_SIZE (8)
-    0x95, 8, //   REPORT_COUNT: POV[8]
+    0x95, 4, //   REPORT_COUNT: POV
     0x09, 0x02, //   USAGE (Vendor Usage 1)
     0x91, 0x02, //   OUTPUT (Data,Var,Abs)
+
     0x15, 0x00, //   LOGICAL_MINIMUM (0)
     0x25, 0x01, //   LOGICAL_MAXIMUM (1)
     0x75, 0x01, //   REPORT_SIZE (1)
     0x95, 128, //   REPORT_COUNT: Buttons (128 bits)
     0x09, 0x02, //   USAGE (Vendor Usage 1)
     0x91, 0x02, //   OUTPUT (Data,Var,Abs)
+
     0xc0 // END_COLLECTION
 };
 

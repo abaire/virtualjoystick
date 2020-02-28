@@ -45,7 +45,8 @@ typedef struct _DEVICE_REPORT
 
     INT16 Slider[4];
     INT16 Dial[4];
-    INT8  POV[8];  // POV's (valid values are -1,0,1,2,3,4,5,6,7)
+
+    INT16  POV[4];
 
     UCHAR Button[16];  // 128 button bits
 } DEVICE_REPORT, * PDEVICE_REPORT;
