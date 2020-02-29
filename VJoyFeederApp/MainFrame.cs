@@ -1,12 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using Microsoft.Win32;
-using System.Runtime.InteropServices;
 
 
 namespace JoystickUsermodeDriver
@@ -140,49 +136,6 @@ namespace JoystickUsermodeDriver
 
                 // TODO: Pop a UI to allow joysticks to be enumerated and mapped.
                 var profile = k.CreateSubKey("Profile_0", true);
-
-                // var xbox_controller = profile.CreateSubKey("63C903B059A711EA8001444553540000");
-                //
-                // // xbox_controller.SetValue("DEVICE_NAME", "Controller (XBOX 360 For Windows)");
-                // var index = 0;
-                //
-                // var mapping = new VJoyDriverInterface.DeviceMapping(
-                //     VJoyDriverInterface.MappingType.axis,
-                //     VJoyDriverInterface.AxisIndex.axis_x);
-                // mapping.WriteToRegistry(xbox_controller, $"Mapping_{index++}");
-                //
-                // mapping = new VJoyDriverInterface.DeviceMapping(
-                //     VJoyDriverInterface.MappingType.axis,
-                //     VJoyDriverInterface.AxisIndex.axis_y);
-                // mapping.WriteToRegistry(xbox_controller, $"Mapping_{index++}");
-                //
-                // mapping = new VJoyDriverInterface.DeviceMapping(
-                //     VJoyDriverInterface.MappingType.axis,
-                //     VJoyDriverInterface.AxisIndex.axis_throttle);
-                // mapping.WriteToRegistry(xbox_controller, $"Mapping_{index++}");
-                //
-                // mapping = new VJoyDriverInterface.DeviceMapping(
-                //     VJoyDriverInterface.MappingType.axis,
-                //     VJoyDriverInterface.AxisIndex.axis_rx);
-                // mapping.WriteToRegistry(xbox_controller, $"Mapping_{index++}");
-                //
-                // mapping = new VJoyDriverInterface.DeviceMapping(
-                //     VJoyDriverInterface.MappingType.axis,
-                //     VJoyDriverInterface.AxisIndex.axis_ry);
-                // mapping.WriteToRegistry(xbox_controller, $"Mapping_{index++}");
-                //
-                // mapping = new VJoyDriverInterface.DeviceMapping(
-                //     VJoyDriverInterface.MappingType.pov,
-                //     (UInt32) 0);
-                // mapping.WriteToRegistry(xbox_controller, $"Mapping_{index++}");
-                //
-                // for (UInt32 i = 0; i < 10; ++i)
-                // {
-                //     mapping = new VJoyDriverInterface.DeviceMapping(
-                //         VJoyDriverInterface.MappingType.button,
-                //         i);
-                //     mapping.WriteToRegistry(xbox_controller, $"Mapping_{index++}");
-                // }
             }
         }
 

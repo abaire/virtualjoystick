@@ -100,14 +100,12 @@ void CDriverInterface::CloseDriverHandle(void)
 
 BOOL CDriverInterface::OpenDirectXHandle(void)
 {
-    // Pop open dinput and grab our joysticks
     if (FAILED(DirectInput8Create(GetModuleHandle(NULL),
         DIRECTINPUT_VERSION,
         IID_IDirectInput8A,
         (LPVOID*)&m_pDI,
         NULL)))
         return FALSE;
-
 
     return TRUE;
 }
@@ -258,7 +256,6 @@ static BOOL CALLBACK EnumJoysticksForFrontend(const DIDEVICEINSTANCE* inst, VOID
 {
     CDriverInterface::DeviceEnumCB cb = static_cast<CDriverInterface::DeviceEnumCB>(pContext);
 
-    // Skip our own virtual joystick
     if (inst->guidProduct != PRODUCT_VJOY)
     {
         char guid[256] = {0};
