@@ -1,3 +1,5 @@
+using System.Windows.Forms;
+
 namespace JoystickUsermodeDriver
 {
     partial class MainFrame
@@ -57,12 +59,14 @@ namespace JoystickUsermodeDriver
             this.slider1Axis = new System.Windows.Forms.ProgressBar();
             this.slider2Axis = new System.Windows.Forms.ProgressBar();
             this.systemTrayIcon = new System.Windows.Forms.NotifyIcon(this.components);
-            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
-            this.chooseDevicesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.joystickDeviceView = new System.Windows.Forms.ListView();
+            this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.MenuShow = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuClose = new System.Windows.Forms.ToolStripMenuItem();
-            this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.chooseDevicesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.joystickDeviceList = new System.Windows.Forms.ListView();
+            this.Device = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.GUID = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             label9 = new System.Windows.Forms.Label();
             label11 = new System.Windows.Forms.Label();
             label13 = new System.Windows.Forms.Label();
@@ -79,8 +83,8 @@ namespace JoystickUsermodeDriver
             groupBox2 = new System.Windows.Forms.GroupBox();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
-            this.menuStrip1.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
+            this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // label9
@@ -333,13 +337,35 @@ namespace JoystickUsermodeDriver
             this.systemTrayIcon.Text = "Virtual Joystick Driver";
             this.systemTrayIcon.Visible = true;
             // 
+            // contextMenuStrip
+            // 
+            this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.MenuShow,
+            this.MenuClose});
+            this.contextMenuStrip.Name = "contextMenuStrip";
+            this.contextMenuStrip.Size = new System.Drawing.Size(104, 48);
+            // 
+            // MenuShow
+            // 
+            this.MenuShow.Name = "MenuShow";
+            this.MenuShow.Size = new System.Drawing.Size(103, 22);
+            this.MenuShow.Text = "Show";
+            this.MenuShow.Click += new System.EventHandler(this.MenuShow_Click);
+            // 
+            // MenuClose
+            // 
+            this.MenuClose.Name = "MenuClose";
+            this.MenuClose.Size = new System.Drawing.Size(103, 22);
+            this.MenuClose.Text = "Close";
+            this.MenuClose.Click += new System.EventHandler(this.MenuClose_Click);
+            // 
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.chooseDevicesToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(530, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(776, 24);
             this.menuStrip1.TabIndex = 34;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -350,44 +376,39 @@ namespace JoystickUsermodeDriver
             this.chooseDevicesToolStripMenuItem.Text = "Choose Devices";
             this.chooseDevicesToolStripMenuItem.Click += new System.EventHandler(this.chooseDevicesToolStripMenuItem_Click);
             // 
-            // joystickDeviceView
+            // joystickDeviceList
             // 
-            this.joystickDeviceView.HideSelection = false;
-            this.joystickDeviceView.Location = new System.Drawing.Point(218, 27);
-            this.joystickDeviceView.Name = "joystickDeviceView";
-            this.joystickDeviceView.Size = new System.Drawing.Size(282, 234);
-            this.joystickDeviceView.TabIndex = 35;
-            this.joystickDeviceView.UseCompatibleStateImageBehavior = false;
+            this.joystickDeviceList.AllowColumnReorder = true;
+            this.joystickDeviceList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.Device,
+            this.GUID});
+            this.joystickDeviceList.HideSelection = false;
+            this.joystickDeviceList.Location = new System.Drawing.Point(198, 27);
+            this.joystickDeviceList.MultiSelect = false;
+            this.joystickDeviceList.Name = "joystickDeviceList";
+            this.joystickDeviceList.ShowGroups = false;
+            this.joystickDeviceList.Size = new System.Drawing.Size(541, 234);
+            this.joystickDeviceList.Sorting = System.Windows.Forms.SortOrder.Descending;
+            this.joystickDeviceList.TabIndex = 35;
+            this.joystickDeviceList.UseCompatibleStateImageBehavior = false;
+            this.joystickDeviceList.View = System.Windows.Forms.View.Details;
+            this.joystickDeviceList.ItemSelectionChanged += new System.Windows.Forms.ListViewItemSelectionChangedEventHandler(this.joystickDeviceList_ItemSelectionChanged);
             // 
-            // MenuShow
+            // Device
             // 
-            this.MenuShow.Name = "MenuShow";
-            this.MenuShow.Size = new System.Drawing.Size(180, 22);
-            this.MenuShow.Text = "Show";
-            this.MenuShow.Click += new System.EventHandler(this.MenuShow_Click);
+            this.Device.Width = 162;
             // 
-            // MenuClose
+            // GUID
             // 
-            this.MenuClose.Name = "MenuClose";
-            this.MenuClose.Size = new System.Drawing.Size(180, 22);
-            this.MenuClose.Text = "Close";
-            this.MenuClose.Click += new System.EventHandler(this.MenuClose_Click);
-            // 
-            // contextMenuStrip
-            // 
-            this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.MenuShow,
-            this.MenuClose});
-            this.contextMenuStrip.Name = "contextMenuStrip";
-            this.contextMenuStrip.Size = new System.Drawing.Size(104, 48);
+            this.GUID.Width = 157;
             // 
             // MainFrame
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(530, 348);
+            this.ClientSize = new System.Drawing.Size(776, 348);
             this.ControlBox = false;
-            this.Controls.Add(this.joystickDeviceView);
+            this.Controls.Add(this.joystickDeviceList);
             this.Controls.Add(this.menuStrip1);
             this.Controls.Add(groupBox1);
             this.Controls.Add(groupBox2);
@@ -403,9 +424,9 @@ namespace JoystickUsermodeDriver
             groupBox1.PerformLayout();
             groupBox2.ResumeLayout(false);
             groupBox2.PerformLayout();
+            this.contextMenuStrip.ResumeLayout(false);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
-            this.contextMenuStrip.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -428,10 +449,12 @@ namespace JoystickUsermodeDriver
       private System.Windows.Forms.NotifyIcon systemTrayIcon;
       private System.Windows.Forms.MenuStrip menuStrip1;
       private System.Windows.Forms.ToolStripMenuItem chooseDevicesToolStripMenuItem;
-        private System.Windows.Forms.ListView joystickDeviceView;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem MenuShow;
         private System.Windows.Forms.ToolStripMenuItem MenuClose;
+        private System.Windows.Forms.ListView joystickDeviceList;
+        private ColumnHeader Device;
+        private ColumnHeader GUID;
     }
 }
 

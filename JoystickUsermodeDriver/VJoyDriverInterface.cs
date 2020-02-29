@@ -1,8 +1,6 @@
+using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
-using System.Data;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace JoystickUsermodeDriver
 {
@@ -12,9 +10,9 @@ namespace JoystickUsermodeDriver
 
         public enum MappingType
         {
-            DS_AXIS = 0,
-            DS_POV,
-            DS_BUTTON
+            axis = 0,
+            pov,
+            button
         }
 
         public enum AxisIndex
@@ -41,20 +39,79 @@ namespace JoystickUsermodeDriver
             MappingType srcBlock; //!< The type of the source state
             UInt32 srcIndex; //!< The index of the source joystick state
 
-            bool invert;
+            Int32 invert;
+
+            private const string ValueDestBlock = "destType";
+            private const string ValueDestIndex = "destIndex";
+            private const string ValueSrcBlock = "srcType";
+            private const string ValueSrcIndex = "srcIndex";
+            private const string ValueInvert = "invert";
 
             public DeviceMapping(
                 MappingType destBlock,
                 UInt32 destIndex,
                 MappingType srcBlock,
                 UInt32 srcIndex,
-                bool invert)
+                bool invert = false)
             {
                 this.destBlock = destBlock;
                 this.destIndex = destIndex;
                 this.srcBlock = srcBlock;
                 this.srcIndex = srcIndex;
-                this.invert = invert;
+                this.invert = invert ? 1 : 0;
+            }
+
+            public DeviceMapping(
+                MappingType destBlock,
+                AxisIndex destIndex,
+                MappingType srcBlock,
+                AxisIndex srcIndex,
+                bool invert = false)
+                : this(destBlock, (UInt32)destIndex, srcBlock, (UInt32)srcIndex, invert)
+            {
+            }
+
+            public DeviceMapping(
+                MappingType destAndSrcBlock,
+                AxisIndex destAndSrcIndex,
+                bool invert = false) 
+                : this(destAndSrcBlock, (UInt32)destAndSrcIndex, destAndSrcBlock, (UInt32)destAndSrcIndex, invert)
+            {
+            }
+
+            public DeviceMapping(
+                MappingType destAndSrcBlock,
+                UInt32 destAndSrcIndex,
+                bool invert = false)
+                : this(destAndSrcBlock, destAndSrcIndex, destAndSrcBlock, destAndSrcIndex, invert)
+            {
+            }
+
+            public DeviceMapping(RegistryKey k)
+            {
+                var enumType = typeof(MappingType);
+                this.destBlock = (MappingType)Enum.Parse(enumType, k.GetValue(ValueDestBlock).ToString());
+                this.destIndex = Convert.ToUInt32(k.GetValue(ValueDestIndex));
+                this.srcBlock = (MappingType)Enum.Parse(enumType, k.GetValue(ValueSrcBlock).ToString());
+                this.srcIndex = Convert.ToUInt32(k.GetValue(ValueSrcIndex));
+                this.invert = Convert.ToInt32(k.GetValue(ValueInvert));
+            }
+
+            public void WriteToRegistry(RegistryKey k)
+            {
+                k.SetValue(ValueDestBlock, this.destBlock, RegistryValueKind.String);
+                k.SetValue(ValueDestIndex, this.destIndex, RegistryValueKind.DWord);
+                k.SetValue(ValueSrcBlock, this.srcBlock, RegistryValueKind.String);
+                k.SetValue(ValueSrcIndex, this.srcIndex, RegistryValueKind.DWord);
+                k.SetValue(ValueInvert, this.invert, RegistryValueKind.DWord);
+            }
+
+            public void WriteToRegistry(RegistryKey k, string subkeyName)
+            {
+                using (var subkey = k.CreateSubKey(subkeyName, true))
+                {
+                    this.WriteToRegistry(subkey);
+                }
             }
         }
 
@@ -78,12 +135,14 @@ namespace JoystickUsermodeDriver
 
         [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "SetDeviceMapping",
             SetLastError = false)]
-        public static extern bool SetDeviceMapping(UInt32 h,
+        public static extern bool SetDeviceMapping(
+            UInt32 h,
             [MarshalAs(UnmanagedType.LPStr)] string deviceGUID,
             DeviceMapping[] mappings, 
-            UInt32 mappingCount);
+            Int32 mappingCount);
 
-        public delegate void DeviceEnumCallback([MarshalAs(UnmanagedType.LPStr)] string name,
+        public delegate void DeviceEnumCallback(
+            [MarshalAs(UnmanagedType.LPStr)] string name,
             [MarshalAs(UnmanagedType.LPStr)] string guid);
 
         [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "EnumerateDevices",

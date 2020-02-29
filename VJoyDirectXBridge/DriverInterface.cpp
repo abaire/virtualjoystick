@@ -214,7 +214,7 @@ BOOL CDriverInterface::EnumerateDevices(DeviceEnumCB cb)
 
 static BOOL CALLBACK EnumJoysticksForFrontend(const DIDEVICEINSTANCE* inst, VOID* pContext)
 {
-    CDriverInterface::DeviceEnumCB cb = CDriverInterface::DeviceEnumCB(pContext);
+    CDriverInterface::DeviceEnumCB cb = static_cast<CDriverInterface::DeviceEnumCB>(pContext);
 
     // Skip our own virtual joystick
     if (inst->guidProduct != PRODUCT_VJOY)

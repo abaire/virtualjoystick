@@ -14,24 +14,22 @@ namespace JoystickUsermodeDriver
     public partial class MainFrame : Form
     {
         public const String REGISTRY_KEY = "SOFTWARE\\BearBrains\\VirtualJoystick\\1.0";
+        const String ACTIVE_PROFILE_NAME = "ActiveProfileName";
 
-        UInt32 m_driverHandle; //!< Handle to the virtual joystick driver instance
-        string m_joystickGUID; //!< GUID of the physical device to be treated as a joystick
-        string m_rudderGUID; //!< GUID of the physical device to be treated as a rudder
+        UInt32 _driverHandle; //!< Handle to the virtual joystick driver instance
 
-        List<DeviceDescription>
-            m_deviceEnumeration; //!< List of DeviceDescription instances for available physical devices
-
+        //! List of DeviceDescription instances for available physical devices
+        List<DeviceDescription> _deviceEnumeration; 
 
         public MainFrame()
         {
             InitializeComponent();
 
-            m_deviceEnumeration = new List<DeviceDescription>();
+            _deviceEnumeration = new List<DeviceDescription>();
 
             // Try to find our driver
-            m_driverHandle = VJoyDriverInterface.AttachToVirtualJoystickDriver();
-            if (m_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
+            _driverHandle = VJoyDriverInterface.AttachToVirtualJoystickDriver();
+            if (_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
             {
                 MessageBox.Show("Failed to find virtual joystick device!",
                     "Driver Not Found Error",
@@ -41,21 +39,95 @@ namespace JoystickUsermodeDriver
             }
 
             // Check the registry to see if we have a device map set up
-            RegistryKey k = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY);
-            if (k == null)
-                k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY);
-
-            m_joystickGUID = k.GetValue("JOYSTICK_GUID", "").ToString();
-            m_rudderGUID = k.GetValue("RUDDER_GUID", "").ToString();
-            k.Close();
+            bool validProfile = true;
+            using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY))
+            {
+                var activeProfile = k.GetValue(ACTIVE_PROFILE_NAME, "").ToString();
+                if (activeProfile.Length == 0)
+                {
+                    validProfile = false;
+                }
+                else
+                {
+                    using (var profile = k.OpenSubKey(activeProfile))
+                    {
+                        if (profile == null)
+                        {
+                            validProfile = false;
+                        }
+                    }
+                }
+            }
 
             // If no joystick is configured, pop the chooser dialog, otherwise just start feeding
-            if (m_joystickGUID.Length == 0)
-                displayJoystickChooser();
-            else
-                beginFeedingDriver();
+            if (!validProfile)
+            {
+                this.GenerateDefaultProfile();
+                //displayJoystickChooser();
+            }
+
+            beginFeedingDriver();
         }
 
+        private void GenerateDefaultProfile()
+        {
+            using (RegistryKey k = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY, true))
+            {
+                var numProfiles = k.GetSubKeyNames().Length;
+
+                k.SetValue(ACTIVE_PROFILE_NAME, "Profile_0");
+
+                if (numProfiles > 0)
+                {
+                    // TODO: Pop a UI to allow the active profile to be selected.
+                    return;
+                }
+
+                // TODO: Pop a UI to allow joysticks to be enumerated and mapped.
+                var profile = k.CreateSubKey("Profile_0", true);
+
+                var xbox_controller = profile.CreateSubKey("63C903B059A711EA8001444553540000");
+                var index = 0;
+
+                var mapping = new VJoyDriverInterface.DeviceMapping(
+                    VJoyDriverInterface.MappingType.axis,
+                    VJoyDriverInterface.AxisIndex.axis_x);
+                mapping.WriteToRegistry(xbox_controller, $"Mapping_{index++}");
+
+                mapping = new VJoyDriverInterface.DeviceMapping(
+                    VJoyDriverInterface.MappingType.axis,
+                    VJoyDriverInterface.AxisIndex.axis_y);
+                mapping.WriteToRegistry(xbox_controller, $"Mapping_{index++}");
+
+                mapping = new VJoyDriverInterface.DeviceMapping(
+                    VJoyDriverInterface.MappingType.axis,
+                    VJoyDriverInterface.AxisIndex.axis_throttle);
+                mapping.WriteToRegistry(xbox_controller, $"Mapping_{index++}");
+
+                mapping = new VJoyDriverInterface.DeviceMapping(
+                    VJoyDriverInterface.MappingType.axis,
+                    VJoyDriverInterface.AxisIndex.axis_rx);
+                mapping.WriteToRegistry(xbox_controller, $"Mapping_{index++}");
+
+                mapping = new VJoyDriverInterface.DeviceMapping(
+                    VJoyDriverInterface.MappingType.axis,
+                    VJoyDriverInterface.AxisIndex.axis_ry);
+                mapping.WriteToRegistry(xbox_controller, $"Mapping_{index++}");
+
+                mapping = new VJoyDriverInterface.DeviceMapping(
+                    VJoyDriverInterface.MappingType.pov,
+                    (UInt32)0);
+                mapping.WriteToRegistry(xbox_controller, $"Mapping_{index++}");
+
+                for (UInt32 i = 0; i < 10; ++i)
+                {
+                    mapping = new VJoyDriverInterface.DeviceMapping(
+                        VJoyDriverInterface.MappingType.button,
+                        i);
+                    mapping.WriteToRegistry(xbox_controller, $"Mapping_{index++}");
+                }
+            }
+        }
 
         private void MenuClose_Click(object sender, EventArgs e)
         {
@@ -74,20 +146,21 @@ namespace JoystickUsermodeDriver
             {
                 MenuShow.Text = "Hide";
                 WindowState = FormWindowState.Normal;
+                this.DisplayJoystickGUIDs();
             }
         }
 
 
         private void MainFrame_FormClosed(object sender, FormClosedEventArgs e)
         {
-            VJoyDriverInterface.DetachFromVirtualJoystickDriver(m_driverHandle);
-            m_driverHandle = VJoyDriverInterface.INVALID_HANDLE_VALUE;
+            VJoyDriverInterface.DetachFromVirtualJoystickDriver(_driverHandle);
+            _driverHandle = VJoyDriverInterface.INVALID_HANDLE_VALUE;
         }
 
 
         private void chooseDevicesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            VJoyDriverInterface.EndDriverUpdateLoop(m_driverHandle);
+            VJoyDriverInterface.EndDriverUpdateLoop(_driverHandle);
 
             // The joystick chooser will start up the loop again
             displayJoystickChooser();
@@ -99,30 +172,50 @@ namespace JoystickUsermodeDriver
             DeviceDescription dd;
             dd.displayName = name;
             dd.GUID = guid;
-            m_deviceEnumeration.Add(dd);
+            _deviceEnumeration.Add(dd);
         }
 
+        public List<DeviceDescription> DeviceEnumeration
+        {
+            get {
+                if (_deviceEnumeration.Count == 0)
+                {
+                    if (!VJoyDriverInterface.EnumerateDevices(_driverHandle,
+                        new VJoyDriverInterface.DeviceEnumCallback(deviceEnumCallback)))
+                    {
+                        MessageBox.Show("Attempt to search for physical joystick devices failed!",
+                            "Interface Error",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Exclamation);
+                    }
+
+                }
+                return _deviceEnumeration;
+            }
+        }
+
+        private void DisplayJoystickGUIDs()
+        {
+            this.joystickDeviceList.Items.Clear();
+
+            foreach (DeviceDescription d in this.DeviceEnumeration)
+            {
+                String[] data = new string[2];
+                data[0] = d.displayName;
+                data[1] = d.GUID;
+                this.joystickDeviceList.Items.Add(new ListViewItem(data));
+            }
+            this.joystickDeviceList.Columns[0].Width = -1;
+            this.joystickDeviceList.Columns[1].Width = -1;
+        }
 
         private void displayJoystickChooser()
         {
-            if (m_deviceEnumeration.Count == 0)
-            {
-                if (!VJoyDriverInterface.EnumerateDevices(m_driverHandle,
-                    new VJoyDriverInterface.DeviceEnumCallback(deviceEnumCallback)))
-                {
-                    MessageBox.Show("Attempt to search for physical joystick devices failed!",
-                        "Interface Error",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Exclamation);
-                    return;
-                }
-            }
-
             // Display the chooser dialog
-            if (m_deviceEnumeration.Count > 0)
+            if (this.DeviceEnumeration.Count > 0)
             {
                 DevicePicker dpDlg = new DevicePicker();
-                dpDlg.populateLists(m_deviceEnumeration);
+                dpDlg.populateLists(_deviceEnumeration);
                 dpDlg.ShowDialog();
 
                 // If the user clicked OK, update our devices
@@ -130,11 +223,11 @@ namespace JoystickUsermodeDriver
                 {
                     RegistryKey k = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY, true);
 
-                    m_joystickGUID = dpDlg.joystickDevice.GUID;
-                    m_rudderGUID = dpDlg.rudderDevice.GUID;
+                    //m_joystickGUID = dpDlg.joystickDevice.GUID;
+                    //m_rudderGUID = dpDlg.rudderDevice.GUID;
 
-                    k.SetValue("JOYSTICK_GUID", m_joystickGUID);
-                    k.SetValue("RUDDER_GUID", m_rudderGUID);
+                    //k.SetValue("JOYSTICK_GUID", m_joystickGUID);
+                    //k.SetValue("RUDDER_GUID", m_rudderGUID);
                     k.Close();
 
                     // Notify the driver of the update
@@ -153,11 +246,11 @@ namespace JoystickUsermodeDriver
 
         private void beginFeedingDriver()
         {
-            if (m_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
+            if (_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
                 return;
 
-            // VJoyDriverInterface.SetDeviceIDs(m_driverHandle, m_joystickGUID, m_rudderGUID);
-            if (!VJoyDriverInterface.BeginDriverUpdateLoop(m_driverHandle))
+            this.LoadMappingsIntoDriver();
+            if (!VJoyDriverInterface.BeginDriverUpdateLoop(_driverHandle))
             {
                 MessageBox.Show("Failed to interface with virtual joystick device! Code: 1",
                     "Interface Error",
@@ -166,18 +259,104 @@ namespace JoystickUsermodeDriver
             }
         }
 
+        private void LoadMappingsIntoDriver()
+        {
+            using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY))
+            {
+                var activeProfileName = k.GetValue(ACTIVE_PROFILE_NAME);
+                if (activeProfileName == null)
+                {
+                    MessageBox.Show(
+                        $"{ACTIVE_PROFILE_NAME} not set under {REGISTRY_KEY}. No mappings loaded.",
+                        "Registry Error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Exclamation);
+                    return;
+                }
+
+                this.LoadMappingsForProfile(k, activeProfileName.ToString());
+
+
+               // VJoyDriverInterface.SetDeviceMapping(_driverHandle, Guid, mappings, mappingCuont);
+            }
+        }
+
+        private void LoadMappingsForProfile(RegistryKey parentKey, string activeProfileName)
+        {
+            using (RegistryKey activeProfile = parentKey.OpenSubKey(activeProfileName))
+            {
+                if (activeProfile == null)
+                {
+                    MessageBox.Show(
+                        $"{activeProfileName} does not exist under {REGISTRY_KEY}. No mappings loaded.",
+                        "Registry Error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Exclamation);
+                    return;
+                }
+
+                foreach (var deviceID in activeProfile.GetSubKeyNames()) 
+                {
+                    this.LoadMappingsForDevice(activeProfile, deviceID);
+                }
+            }
+        }
+
+        private void LoadMappingsForDevice(RegistryKey profileKey, string deviceID)
+        {
+            using (RegistryKey device = profileKey.OpenSubKey(deviceID))
+            { 
+                if (device == null)
+                {
+                    MessageBox.Show(
+                        $"{deviceID} does not exist in profile {profileKey.Name}. Skipping device.",
+                        "Registry Error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Exclamation);
+                    return;
+                }
+
+                var mappings = new List<VJoyDriverInterface.DeviceMapping>();
+                foreach (var mappingName in device.GetSubKeyNames())
+                {
+                    using (RegistryKey mappingKey = device.OpenSubKey(mappingName))
+                    {
+                        if (mappingKey == null)
+                        {
+                            MessageBox.Show(
+                                $"{mappingName} does not exist in device {deviceID} in profile {profileKey.Name}. Skipping device.",
+                                "Registry Error",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Exclamation);
+                            return;
+                        }
+                        var m = new VJoyDriverInterface.DeviceMapping(mappingKey);
+                        mappings.Add(m);
+                    }
+                }
+
+                VJoyDriverInterface.SetDeviceMapping(_driverHandle, deviceID, mappings.ToArray(), mappings.Count);
+            }
+        }
+
 
         private void stopFeedingDriver()
         {
-            if (m_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
+            if (_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
                 return;
 
-            VJoyDriverInterface.EndDriverUpdateLoop(m_driverHandle);
+            VJoyDriverInterface.EndDriverUpdateLoop(_driverHandle);
         }
 
-        private void listDeviceGUIDsToolStripMenuItem_Click(object sender, EventArgs e)
+        private void joystickDeviceList_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e)
         {
-
+            var builder = new StringBuilder();
+            foreach (ListViewItem item in this.joystickDeviceList.SelectedItems)
+                builder.AppendLine(item.SubItems[1].Text);
+            if (builder.Length > 0)
+            {
+                Clipboard.SetText(builder.ToString());
+            }
         }
     }
 }
