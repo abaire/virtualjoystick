@@ -84,6 +84,7 @@
     <Compile Include="DevicePicker.Designer.cs">
       <DependentUpon>DevicePicker.cs</DependentUpon>
     </Compile>
+    <Compile Include="DeviceRegistry.cs" />
     <Compile Include="VJoyDriverInterface.cs" />
     <Compile Include="MainFrame.cs">
       <SubType>Form</SubType>
