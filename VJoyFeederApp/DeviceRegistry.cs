@@ -10,6 +10,7 @@ namespace JoystickUsermodeDriver
         public const string REGISTRY_KEY = "SOFTWARE\\BearBrains\\VirtualJoystick\\1.0";
         private const string ACTIVE_PROFILE_NAME = "ActiveProfileName";
         private const string DEVICE_NAME = "DeviceName";
+        private const string CURRENT_DEVICE_PROTOTYPES = "CurrentDevicePrototypes";
 
         public const string REGISTRY_VALUE_VIRTUAL_DEVICE_TYPE = "virtualType";
         public const string REGISTRY_VALUE_VIRTUAL_DEVICE_INDEX = "virtualIndex";
@@ -17,29 +18,59 @@ namespace JoystickUsermodeDriver
         public const string REGISTRY_VALUE_SOURCE_INDEX = "sourceIndex";
         public const string REGISTRY_VALUE_INVERT = "invert";
 
-        public static string GetActiveProfileName()
+        public static List<string> GetProfiles()
         {
-            string activeProfile = null;
+            var ret = new List<string>();
             using (RegistryKey k = Registry.CurrentUser.CreateSubKey(DeviceRegistry.REGISTRY_KEY))
             {
-                activeProfile = k.GetValue(ACTIVE_PROFILE_NAME, "").ToString();
-                if (activeProfile.Length == 0)
+                foreach (var profileName in k.GetSubKeyNames())
                 {
-                    return null;
-                }
-                else
-                {
-                    using (var profile = k.OpenSubKey(activeProfile))
+                    if (profileName == CURRENT_DEVICE_PROTOTYPES)
                     {
-                        if (profile == null)
-                        {
-                            return null;
-                        }
+                        continue;
                     }
+
+                    ret.Add(profileName);
                 }
             }
 
-            return activeProfile;
+            return ret;
+        }
+
+        public static string ActiveProfileName
+        {
+            get
+            {
+                string activeProfile = null;
+                using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY))
+                {
+                    activeProfile = k.GetValue(ACTIVE_PROFILE_NAME, "").ToString();
+                    if (activeProfile.Length == 0)
+                    {
+                        return null;
+                    }
+                    else
+                    {
+                        using (var profile = k.OpenSubKey(activeProfile))
+                        {
+                            if (profile == null)
+                            {
+                                return null;
+                            }
+                        }
+                    }
+                }
+
+                return activeProfile;
+            }
+
+            set
+            {
+                using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY, true))
+                {
+                    k.SetValue(ACTIVE_PROFILE_NAME, value);
+                }
+            }
         }
 
         public static void GenerateDefaultProfile()
@@ -67,7 +98,7 @@ namespace JoystickUsermodeDriver
             foreach (var value in Enum.GetValues(enumType))
             {
                 var name = Enum.GetName(enumType, value);
-                k.SetValue($"AxisIndex: {name}", (Int32)value, RegistryValueKind.DWord);
+                k.SetValue($"AxisIndex: {name}", (Int32) value, RegistryValueKind.DWord);
             }
         }
 
@@ -75,8 +106,8 @@ namespace JoystickUsermodeDriver
         {
             using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY, true))
             {
-                k.DeleteSubKeyTree("CurrentDevicePrototypes", false);
-                var devicePrototypes = k.CreateSubKey("CurrentDevicePrototypes", true);
+                k.DeleteSubKeyTree(CURRENT_DEVICE_PROTOTYPES, false);
+                var devicePrototypes = k.CreateSubKey(CURRENT_DEVICE_PROTOTYPES, true);
 
                 StoreSupportedAxes(devicePrototypes);
 
@@ -164,9 +195,8 @@ namespace JoystickUsermodeDriver
             return true;
         }
 
-        public static void LoadMappingsIntoDriver(UInt32 driverHandle)
+        public static SortedDictionary<string, List<VJoyDriverInterface.DeviceMapping>> LoadActiveProfileMappings()
         {
-            VJoyDriverInterface.ClearDeviceMappings(driverHandle);
             using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY))
             {
                 var activeProfileName = k.GetValue(ACTIVE_PROFILE_NAME);
@@ -177,35 +207,53 @@ namespace JoystickUsermodeDriver
                         "Registry Error",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Exclamation);
-                    return;
+                    return null;
                 }
 
-                LoadMappingsForProfile(driverHandle, k, activeProfileName.ToString());
+                return LoadMappings(activeProfileName.ToString());
             }
         }
 
-        private static void LoadMappingsForProfile(UInt32 driverHandle, RegistryKey parentKey, string activeProfileName)
+        public static SortedDictionary<string, List<VJoyDriverInterface.DeviceMapping>> LoadMappings(string profileName)
         {
-            using (RegistryKey activeProfile = parentKey.OpenSubKey(activeProfileName))
+            using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY))
+            {
+                return LoadMappingsForProfile(k, profileName);
+            }
+        }
+
+        private static SortedDictionary<string, List<VJoyDriverInterface.DeviceMapping>> LoadMappingsForProfile(
+            RegistryKey parentKey,
+            string profileName)
+        {
+            using (RegistryKey activeProfile = parentKey.OpenSubKey(profileName))
             {
                 if (activeProfile == null)
                 {
                     MessageBox.Show(
-                        $"{activeProfileName} does not exist under {REGISTRY_KEY}. No mappings loaded.",
+                        $"{profileName} does not exist under {REGISTRY_KEY}. No mappings loaded.",
                         "Registry Error",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Exclamation);
-                    return;
+                    return null;
                 }
 
+                var deviceToMappings = new SortedDictionary<string, List<VJoyDriverInterface.DeviceMapping>>();
                 foreach (var deviceID in activeProfile.GetSubKeyNames())
                 {
-                    LoadMappingsForDevice(driverHandle, activeProfile, deviceID);
+                    var mappings = LoadMappingsForDevice(activeProfile, deviceID);
+                    if (mappings != null)
+                    {
+                        deviceToMappings[deviceID] = mappings;
+                    }
                 }
+
+                return deviceToMappings;
             }
         }
 
-        private static void LoadMappingsForDevice(UInt32 driverHandle, RegistryKey profileKey, string deviceID)
+        private static List<VJoyDriverInterface.DeviceMapping> LoadMappingsForDevice(RegistryKey profileKey,
+            string deviceID)
         {
             using (RegistryKey device = profileKey.OpenSubKey(deviceID))
             {
@@ -216,7 +264,7 @@ namespace JoystickUsermodeDriver
                         "Registry Error",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Exclamation);
-                    return;
+                    return null;
                 }
 
                 var mappings = new List<VJoyDriverInterface.DeviceMapping>();
@@ -231,7 +279,7 @@ namespace JoystickUsermodeDriver
                                 "Registry Error",
                                 MessageBoxButtons.OK,
                                 MessageBoxIcon.Exclamation);
-                            return;
+                            return null;
                         }
 
                         var m = new VJoyDriverInterface.DeviceMapping(mappingKey);
@@ -239,9 +287,8 @@ namespace JoystickUsermodeDriver
                     }
                 }
 
-                VJoyDriverInterface.SetDeviceMapping(driverHandle, deviceID, mappings.ToArray(), mappings.Count);
+                return mappings;
             }
         }
     }
-
 }

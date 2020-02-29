@@ -2,18 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Windows.Forms;
-using Microsoft.DirectX.DirectInput;
-using Microsoft.Win32;
 
 
 namespace JoystickUsermodeDriver
 {
     public partial class MainFrame : Form
     {
-        UInt32 _driverHandle; //!< Handle to the virtual joystick driver instance
+        private UInt32 _driverHandle; //!< Handle to the virtual joystick driver instance
+        private bool _driverFeedRunning = false;
 
         //! List of DeviceDescription instances for available physical devices
-        List<DeviceDescription> _deviceEnumeration;
+        private List<DeviceDescription> _deviceEnumeration;
 
         public MainFrame()
         {
@@ -32,18 +31,22 @@ namespace JoystickUsermodeDriver
             }
 
             DeviceRegistry.StoreEnumeratedDevices(this._driverHandle, this.DeviceEnumeration);
-            var activeProfileName = DeviceRegistry.GetActiveProfileName();
+            var activeProfileName = DeviceRegistry.ActiveProfileName;
 
             // If no joystick is configured, pop the chooser dialog, otherwise just start feeding
             if (activeProfileName == null)
             {
                 DeviceRegistry.GenerateDefaultProfile();
-                //DisplayJoystickChooser();
             }
 
+            RefreshDisplay();
             BeginFeedingDriver();
         }
 
+        private void PopulateProfileList()
+        {
+            profileList.DataSource = DeviceRegistry.GetProfiles();
+        }
 
         private void MenuClose_Click(object sender, EventArgs e)
         {
@@ -62,7 +65,7 @@ namespace JoystickUsermodeDriver
             {
                 MenuShow.Text = "Hide";
                 WindowState = FormWindowState.Normal;
-                this.DisplayJoystickGUIDs();
+                RefreshDisplay();
             }
         }
 
@@ -72,16 +75,6 @@ namespace JoystickUsermodeDriver
             VJoyDriverInterface.DetachFromVirtualJoystickDriver(_driverHandle);
             _driverHandle = VJoyDriverInterface.INVALID_HANDLE_VALUE;
         }
-
-
-        private void chooseDevicesToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            VJoyDriverInterface.EndDriverUpdateLoop(_driverHandle);
-
-            // The joystick chooser will start up the loop again
-            DisplayJoystickChooser();
-        }
-
 
         public void deviceEnumCallback(string name, string guid)
         {
@@ -111,53 +104,28 @@ namespace JoystickUsermodeDriver
             }
         }
 
-        private void DisplayJoystickGUIDs()
+        private void PopulateProfileDisplay()
         {
-            this.joystickDeviceList.Items.Clear();
+            this.activeProfileDisplay.Items.Clear();
 
             foreach (DeviceDescription d in this.DeviceEnumeration)
             {
                 String[] data = new string[2];
                 data[0] = d.displayName;
                 data[1] = d.GUID;
-                this.joystickDeviceList.Items.Add(new ListViewItem(data));
+                var item = new ListViewItem(data);
+                item.SubItems.Add("Test Item");
+                this.activeProfileDisplay.Items.Add(item);
             }
 
-            this.joystickDeviceList.Columns[0].Width = -1;
-            this.joystickDeviceList.Columns[1].Width = -1;
-        }
-
-        private void DisplayJoystickChooser()
-        {
-            // Display the chooser dialog
-            if (this.DeviceEnumeration.Count > 0)
-            {
-                DevicePicker dpDlg = new DevicePicker();
-                dpDlg.populateLists(_deviceEnumeration);
-                dpDlg.ShowDialog();
-
-                // If the user clicked OK, update our devices
-                if (dpDlg.isOK)
-                {
-                    // RegistryKey k = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY, true);
-                    // k.Close();
-
-                    // Notify the driver of the update
-                    BeginFeedingDriver();
-                }
-            }
-            else
-            {
-                MessageBox.Show("Failed to find any physical joystick device!",
-                    "Joysticks Not Found Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Exclamation);
-            }
+            this.activeProfileDisplay.Columns[0].Width = -1;
+            this.activeProfileDisplay.Columns[1].Width = -1;
+            this.activeProfileDisplay.Columns[2].Width = -1;
         }
 
         private void BeginFeedingDriver()
         {
-            if (_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
+            if (_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE || _driverFeedRunning)
                 return;
 
             this.LoadMappingsIntoDriver();
@@ -168,30 +136,46 @@ namespace JoystickUsermodeDriver
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Exclamation);
             }
+            _driverFeedRunning = true;
         }
 
         private void LoadMappingsIntoDriver()
         {
             if (_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
                 return;
-            DeviceRegistry.LoadMappingsIntoDriver(_driverHandle);
+
+            VJoyDriverInterface.ClearDeviceMappings(_driverHandle);
+
+            var profile = DeviceRegistry.LoadActiveProfileMappings();
+            foreach (var deviceMapping in profile)
+            {
+                var deviceID = deviceMapping.Key;
+                var mappings = deviceMapping.Value;
+                VJoyDriverInterface.SetDeviceMapping(_driverHandle, deviceID, mappings.ToArray(), mappings.Count);
+            }
         }
-
-
 
 
         private void StopFeedingDriver()
         {
-            if (_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
+            if (_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE || !_driverFeedRunning)
                 return;
 
             VJoyDriverInterface.EndDriverUpdateLoop(_driverHandle);
+            _driverFeedRunning = false;
+        }
+
+        private void ReloadActiveProfile()
+        {
+            // Cycling the driver will reload the current profile.
+            StopFeedingDriver();
+            BeginFeedingDriver();
         }
 
         private void joystickDeviceList_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e)
         {
             var builder = new StringBuilder();
-            foreach (ListViewItem item in this.joystickDeviceList.SelectedItems)
+            foreach (ListViewItem item in this.activeProfileDisplay.SelectedItems)
                 builder.AppendLine(item.SubItems[1].Text);
             if (builder.Length > 0)
             {
@@ -201,16 +185,28 @@ namespace JoystickUsermodeDriver
 
         private void reloadActiveProfileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Cycling the driver will reload the current profile.
-            StopFeedingDriver();
-            BeginFeedingDriver();
+            ReloadActiveProfile();
+        }
+
+        private void RefreshDisplay()
+        {
+            PopulateProfileList();
+            PopulateProfileDisplay();
         }
 
         private void refreshToolStripMenuItem_Click(object sender, EventArgs e)
         {
             StopFeedingDriver();
             _deviceEnumeration.Clear();
-            DisplayJoystickGUIDs();
+            RefreshDisplay();
+            BeginFeedingDriver();
+        }
+
+        private void profileList_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            StopFeedingDriver();
+            var activeProfileName = (string) profileList.SelectedItem;
+            DeviceRegistry.ActiveProfileName = activeProfileName;
             BeginFeedingDriver();
         }
     }

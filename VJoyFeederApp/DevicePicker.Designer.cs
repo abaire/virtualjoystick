@@ -34,6 +34,7 @@ namespace JoystickUsermodeDriver
             this.m_rudderDevice = new System.Windows.Forms.ListBox();
             this.cancelButton = new System.Windows.Forms.Button();
             this.okButton = new System.Windows.Forms.Button();
+            this.listView1 = new System.Windows.Forms.ListView();
             this.SuspendLayout();
             // 
             // label1
@@ -90,11 +91,21 @@ namespace JoystickUsermodeDriver
             this.okButton.UseVisualStyleBackColor = true;
             this.okButton.Click += new System.EventHandler(this.okButton_Click);
             // 
+            // listView1
+            // 
+            this.listView1.HideSelection = false;
+            this.listView1.Location = new System.Drawing.Point(15, 187);
+            this.listView1.Name = "listView1";
+            this.listView1.Size = new System.Drawing.Size(447, 284);
+            this.listView1.TabIndex = 6;
+            this.listView1.UseCompatibleStateImageBehavior = false;
+            // 
             // DevicePicker
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(471, 190);
+            this.ClientSize = new System.Drawing.Size(683, 497);
+            this.Controls.Add(this.listView1);
             this.Controls.Add(this.okButton);
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.m_rudderDevice);
@@ -116,5 +127,6 @@ namespace JoystickUsermodeDriver
     private System.Windows.Forms.ListBox m_rudderDevice;
     private System.Windows.Forms.Button cancelButton;
     private System.Windows.Forms.Button okButton;
-  }
+        private System.Windows.Forms.ListView listView1;
+    }
 }
