@@ -61,12 +61,24 @@ namespace JoystickUsermodeDriver
             }
         }
 
+        private static void StoreSupportedAxes(RegistryKey k)
+        {
+            var enumType = typeof(VJoyDriverInterface.AxisIndex);
+            foreach (var value in Enum.GetValues(enumType))
+            {
+                var name = Enum.GetName(enumType, value);
+                k.SetValue($"AxisIndex: {name}", (Int32)value, RegistryValueKind.DWord);
+            }
+        }
+
         public static void StoreEnumeratedDevices(UInt32 driverHandle, List<DeviceDescription> devices)
         {
             using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY, true))
             {
                 k.DeleteSubKeyTree("CurrentDevicePrototypes", false);
                 var devicePrototypes = k.CreateSubKey("CurrentDevicePrototypes", true);
+
+                StoreSupportedAxes(devicePrototypes);
 
                 foreach (DeviceDescription d in devices)
                 {
@@ -107,7 +119,7 @@ namespace JoystickUsermodeDriver
                         var mapping = new VJoyDriverInterface.DeviceMapping(
                             VJoyDriverInterface.MappingType.axis,
                             item.Item2);
-                        var subkeyName = $"AxisMapping_{item.Item2}";
+                        var subkeyName = $"Axis_{item.Item2}  {item.Item1}";
                         WriteEnumeratedDeviceMapping(subkeyName, deviceKey, mapping, item.Item1);
                     }
 
@@ -116,7 +128,7 @@ namespace JoystickUsermodeDriver
                         var mapping = new VJoyDriverInterface.DeviceMapping(
                             VJoyDriverInterface.MappingType.button,
                             item.Item2);
-                        var subkeyName = $"ButtonMapping_{item.Item2}";
+                        var subkeyName = $"Button_{item.Item2}  {item.Item1}";
                         WriteEnumeratedDeviceMapping(subkeyName, deviceKey, mapping, item.Item1);
                     }
 
@@ -125,7 +137,7 @@ namespace JoystickUsermodeDriver
                         var mapping = new VJoyDriverInterface.DeviceMapping(
                             VJoyDriverInterface.MappingType.pov,
                             item.Item2);
-                        var subkeyName = $"POVMapping_{item.Item2}";
+                        var subkeyName = $"POV_{item.Item2}  {item.Item1}";
                         WriteEnumeratedDeviceMapping(subkeyName, deviceKey, mapping, item.Item1);
                     }
                 }
