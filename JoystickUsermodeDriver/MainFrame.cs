@@ -23,8 +23,6 @@ namespace JoystickUsermodeDriver
             m_deviceEnumeration; //!< List of DeviceDescription instances for available physical devices
 
 
-        //-------------------------------------------------------------------------------------------
-        //-------------------------------------------------------------------------------------------
         public MainFrame()
         {
             InitializeComponent();
@@ -32,7 +30,7 @@ namespace JoystickUsermodeDriver
             m_deviceEnumeration = new List<DeviceDescription>();
 
             // Try to find our driver
-            m_driverHandle = VJoyDriverInterface.AttachToDriver();
+            m_driverHandle = VJoyDriverInterface.AttachToVirtualJoystickDriver();
             if (m_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
             {
                 MessageBox.Show("Failed to find virtual joystick device!",
@@ -58,39 +56,35 @@ namespace JoystickUsermodeDriver
                 beginFeedingDriver();
         }
 
-        //-------------------------------------------------------------------------------------------
-        //-------------------------------------------------------------------------------------------
+
         private void MenuClose_Click(object sender, EventArgs e)
         {
             Close();
         }
 
-        //-------------------------------------------------------------------------------------------
-        //-------------------------------------------------------------------------------------------
-        private void MenuSetup_Click(object sender, EventArgs e)
+
+        private void MenuShow_Click(object sender, EventArgs e)
         {
             if (WindowState == FormWindowState.Normal)
             {
-                MenuSetup.Text = "Show";
+                MenuShow.Text = "Show";
                 WindowState = FormWindowState.Minimized;
             }
             else
             {
-                MenuSetup.Text = "Hide";
+                MenuShow.Text = "Hide";
                 WindowState = FormWindowState.Normal;
             }
         }
 
-        //-------------------------------------------------------------------------------------------
-        //-------------------------------------------------------------------------------------------
+
         private void MainFrame_FormClosed(object sender, FormClosedEventArgs e)
         {
-            VJoyDriverInterface.DetachFromDriver(m_driverHandle);
+            VJoyDriverInterface.DetachFromVirtualJoystickDriver(m_driverHandle);
             m_driverHandle = VJoyDriverInterface.INVALID_HANDLE_VALUE;
         }
 
-        //-------------------------------------------------------------------------------------------
-        //-------------------------------------------------------------------------------------------
+
         private void chooseDevicesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             VJoyDriverInterface.EndDriverUpdateLoop(m_driverHandle);
@@ -100,8 +94,6 @@ namespace JoystickUsermodeDriver
         }
 
 
-        //-------------------------------------------------------------------------------------------
-        //-------------------------------------------------------------------------------------------
         public void deviceEnumCallback(string name, string guid)
         {
             DeviceDescription dd;
@@ -111,8 +103,6 @@ namespace JoystickUsermodeDriver
         }
 
 
-        //-------------------------------------------------------------------------------------------
-        //-------------------------------------------------------------------------------------------
         private void displayJoystickChooser()
         {
             if (m_deviceEnumeration.Count == 0)
@@ -160,14 +150,13 @@ namespace JoystickUsermodeDriver
             }
         }
 
-        //-------------------------------------------------------------------------------------------
-        //-------------------------------------------------------------------------------------------
+
         private void beginFeedingDriver()
         {
             if (m_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
                 return;
 
-            VJoyDriverInterface.SetDeviceIDs(m_driverHandle, m_joystickGUID, m_rudderGUID);
+            // VJoyDriverInterface.SetDeviceIDs(m_driverHandle, m_joystickGUID, m_rudderGUID);
             if (!VJoyDriverInterface.BeginDriverUpdateLoop(m_driverHandle))
             {
                 MessageBox.Show("Failed to interface with virtual joystick device! Code: 1",
@@ -177,14 +166,18 @@ namespace JoystickUsermodeDriver
             }
         }
 
-        //-------------------------------------------------------------------------------------------
-        //-------------------------------------------------------------------------------------------
+
         private void stopFeedingDriver()
         {
             if (m_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
                 return;
 
             VJoyDriverInterface.EndDriverUpdateLoop(m_driverHandle);
+        }
+
+        private void listDeviceGUIDsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
