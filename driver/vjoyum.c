@@ -17,20 +17,25 @@
     "\trX: 0x%X\n" \
     "\trY: 0x%X\n" \
     "\trZ: 0x%X\n" \
-    "\tSlider[0]: 0x%X\n" \
-    "\tSlider[1]: 0x%X\n" \
-    "\tSlider[2]: 0x%X\n" \
-    "\tSlider[3]: 0x%X\n" \
-    "\tDial[0]: 0x%X\n" \
-    "\tDial[1]: 0x%X\n" \
-    "\tDial[2]: 0x%X\n" \
-    "\tDial[3]: 0x%X\n" \
+    "\tSlider: 0x%X\n" \
+    "\tDial: 0x%X\n" \
+    "\tPOV: 0x%X]n" \
     "\tButton[0]: 0x%X\n" \
     "\tButton[1]: 0x%X\n" \
     "\tButton[2]: 0x%X\n" \
     "\tButton[3]: 0x%X\n" \
     "\tButton[4]: 0x%X\n" \
     "\tButton[5]: 0x%X\n" \
+    "\tButton[6]: 0x%X\n" \
+    "\tButton[7]: 0x%X\n" \
+    "\tButton[8]: 0x%X\n" \
+    "\tButton[9]: 0x%X\n" \
+    "\tButton[10]: 0x%X\n" \
+    "\tButton[11]: 0x%X\n" \
+    "\tButton[12]: 0x%X\n" \
+    "\tButton[13]: 0x%X\n" \
+    "\tButton[14]: 0x%X\n" \
+    "\tButton[15]: 0x%X\n" \
     , ((PDEVICE_REPORT)(_v_))->X \
     , ((PDEVICE_REPORT)(_v_))->Y \
     , ((PDEVICE_REPORT)(_v_))->Throttle \
@@ -38,20 +43,25 @@
     , ((PDEVICE_REPORT)(_v_))->rX \
     , ((PDEVICE_REPORT)(_v_))->rY \
     , ((PDEVICE_REPORT)(_v_))->rZ \
-    , ((PDEVICE_REPORT)(_v_))->Slider[0] \
-    , ((PDEVICE_REPORT)(_v_))->Slider[1] \
-    , ((PDEVICE_REPORT)(_v_))->Slider[2] \
-    , ((PDEVICE_REPORT)(_v_))->Slider[3] \
-    , ((PDEVICE_REPORT)(_v_))->Dial[0] \
-    , ((PDEVICE_REPORT)(_v_))->Dial[1] \
-    , ((PDEVICE_REPORT)(_v_))->Dial[2] \
-    , ((PDEVICE_REPORT)(_v_))->Dial[3] \
+    , ((PDEVICE_REPORT)(_v_))->Slider \
+    , ((PDEVICE_REPORT)(_v_))->Dial \
+    , ((PDEVICE_REPORT)(_v_))->POV \
     , ((PDEVICE_REPORT)(_v_))->Button[0] \
     , ((PDEVICE_REPORT)(_v_))->Button[1] \
     , ((PDEVICE_REPORT)(_v_))->Button[2] \
     , ((PDEVICE_REPORT)(_v_))->Button[3] \
     , ((PDEVICE_REPORT)(_v_))->Button[4] \
-    , ((PDEVICE_REPORT)(_v_))->Button[5] ))
+    , ((PDEVICE_REPORT)(_v_))->Button[4] \
+    , ((PDEVICE_REPORT)(_v_))->Button[5] \
+    , ((PDEVICE_REPORT)(_v_))->Button[6] \
+    , ((PDEVICE_REPORT)(_v_))->Button[7] \
+    , ((PDEVICE_REPORT)(_v_))->Button[8] \
+    , ((PDEVICE_REPORT)(_v_))->Button[10] \
+    , ((PDEVICE_REPORT)(_v_))->Button[11] \
+    , ((PDEVICE_REPORT)(_v_))->Button[12] \
+    , ((PDEVICE_REPORT)(_v_))->Button[13] \
+    , ((PDEVICE_REPORT)(_v_))->Button[14] \
+    , ((PDEVICE_REPORT)(_v_))->Button[15] ))
 
 static EVT_WDF_DRIVER_DEVICE_ADD EvtDeviceAdd;
 
