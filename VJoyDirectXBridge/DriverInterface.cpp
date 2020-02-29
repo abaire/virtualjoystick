@@ -141,41 +141,16 @@ DWORD CDriverInterface::UpdateThreadProc(void)
     memset(&packet, 0, sizeof(packet));
     packet.id = REPORTID_VENDOR;
 
-    // const auto numPOVs = sizeof(packet.report.POV) / sizeof(packet.report.POV[0]);
-
-    INT32 temp = 0;
-
     while (m_updateThreadRunning)
     {
-        // Invalidate the POV axes
-        // for (size_t i = 0; i < numPOVs; ++i) {
-        //     packet.report.POV[i] = -1;
-        // }
+        // Invalidate the POV axis
         packet.report.POV = -1;
 
         // Fetch data from our devices into the report packet
         it = m_inputDeviceVector.begin();
         itEnd = m_inputDeviceVector.end();
-//        for (; it != itEnd; ++it)
-//            it->GetVirtualStateUpdatePacket(packet);
-
-        temp += 100;
-#define MAKE_VAL(offset) (temp + offset) & 0xFFFF
-
-        packet.report.X = MAKE_VAL(10000);
-        packet.report.Y = MAKE_VAL(-10000);
-
-        packet.report.Throttle = MAKE_VAL(1000);
-        // packet.report.Rudder = MAKE_VAL(15000);
-
-        packet.report.rX = MAKE_VAL(-20000);
-        packet.report.rY = MAKE_VAL(20000);
-        packet.report.rZ = MAKE_VAL(10000);
-
-        packet.report.POV = (temp / 100) % 7;
-
-        packet.report.Slider = MAKE_VAL(0);
-        packet.report.Dial = MAKE_VAL(5000);
+        for (; it != itEnd; ++it)
+            it->GetVirtualStateUpdatePacket(packet);
 
         // Send the request on to the driver
         DWORD bytesWritten;

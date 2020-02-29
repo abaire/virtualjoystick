@@ -191,20 +191,25 @@ BOOL SetDeviceIDs(HANDLE attachID, const char* joystickGUIDStr, const char* rudd
         CJoystickDevice::DeviceMappingVector mappingVector;
 
         CJoystickDevice::DeviceMapping m;
+
+        // Xbox controller
         MAPAXIS(CJoystickDevice::axis_x, CJoystickDevice::axis_x);
         mappingVector.push_back(m);
 
         MAPAXIS(CJoystickDevice::axis_y, CJoystickDevice::axis_y);
         mappingVector.push_back(m);
 
-        MAPAXIS(CJoystickDevice::axis_throttle, CJoystickDevice::axis_slider);
+        MAPAXIS(CJoystickDevice::axis_throttle, CJoystickDevice::axis_throttle);
         mappingVector.push_back(m);
 
-        MAPAXIS(CJoystickDevice::axis_slider, CJoystickDevice::axis_dial);
+        MAPAXIS(CJoystickDevice::axis_rx, CJoystickDevice::axis_rx);
+        mappingVector.push_back(m);
+
+        MAPAXIS(CJoystickDevice::axis_ry, CJoystickDevice::axis_ry);
         mappingVector.push_back(m);
 
         // Map buttons
-        for (UINT32 i = 0; i < 64; ++i)
+        for (UINT32 i = 0; i < 12; ++i)
         {
             MAPBUTTON(i);
             mappingVector.push_back(m);
