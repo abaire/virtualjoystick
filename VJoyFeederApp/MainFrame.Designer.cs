@@ -61,12 +61,15 @@ namespace JoystickUsermodeDriver
             this.systemTrayIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.MenuShow = new System.Windows.Forms.ToolStripMenuItem();
+            this.reloadActiveProfileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuClose = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.chooseDevicesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.refreshToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.joystickDeviceList = new System.Windows.Forms.ListView();
             this.Device = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.GUID = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.reloadActiveProfileToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             label9 = new System.Windows.Forms.Label();
             label11 = new System.Windows.Forms.Label();
             label13 = new System.Windows.Forms.Label();
@@ -341,28 +344,38 @@ namespace JoystickUsermodeDriver
             // 
             this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.MenuShow,
+            this.reloadActiveProfileToolStripMenuItem,
             this.MenuClose});
             this.contextMenuStrip.Name = "contextMenuStrip";
-            this.contextMenuStrip.Size = new System.Drawing.Size(104, 48);
+            this.contextMenuStrip.Size = new System.Drawing.Size(182, 70);
             // 
             // MenuShow
             // 
             this.MenuShow.Name = "MenuShow";
-            this.MenuShow.Size = new System.Drawing.Size(103, 22);
+            this.MenuShow.Size = new System.Drawing.Size(181, 22);
             this.MenuShow.Text = "Show";
             this.MenuShow.Click += new System.EventHandler(this.MenuShow_Click);
+            // 
+            // reloadActiveProfileToolStripMenuItem
+            // 
+            this.reloadActiveProfileToolStripMenuItem.Name = "reloadActiveProfileToolStripMenuItem";
+            this.reloadActiveProfileToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.reloadActiveProfileToolStripMenuItem.Text = "Reload active profile";
+            this.reloadActiveProfileToolStripMenuItem.Click += new System.EventHandler(this.reloadActiveProfileToolStripMenuItem_Click);
             // 
             // MenuClose
             // 
             this.MenuClose.Name = "MenuClose";
-            this.MenuClose.Size = new System.Drawing.Size(103, 22);
+            this.MenuClose.Size = new System.Drawing.Size(181, 22);
             this.MenuClose.Text = "Close";
             this.MenuClose.Click += new System.EventHandler(this.MenuClose_Click);
             // 
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.chooseDevicesToolStripMenuItem});
+            this.chooseDevicesToolStripMenuItem,
+            this.refreshToolStripMenuItem,
+            this.reloadActiveProfileToolStripMenuItem1});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(776, 24);
@@ -375,6 +388,13 @@ namespace JoystickUsermodeDriver
             this.chooseDevicesToolStripMenuItem.Size = new System.Drawing.Size(102, 20);
             this.chooseDevicesToolStripMenuItem.Text = "Choose Devices";
             this.chooseDevicesToolStripMenuItem.Click += new System.EventHandler(this.chooseDevicesToolStripMenuItem_Click);
+            // 
+            // refreshToolStripMenuItem
+            // 
+            this.refreshToolStripMenuItem.Name = "refreshToolStripMenuItem";
+            this.refreshToolStripMenuItem.Size = new System.Drawing.Size(58, 20);
+            this.refreshToolStripMenuItem.Text = "Refresh";
+            this.refreshToolStripMenuItem.Click += new System.EventHandler(this.refreshToolStripMenuItem_Click);
             // 
             // joystickDeviceList
             // 
@@ -401,6 +421,13 @@ namespace JoystickUsermodeDriver
             // GUID
             // 
             this.GUID.Width = 157;
+            // 
+            // reloadActiveProfileToolStripMenuItem1
+            // 
+            this.reloadActiveProfileToolStripMenuItem1.Name = "reloadActiveProfileToolStripMenuItem1";
+            this.reloadActiveProfileToolStripMenuItem1.Size = new System.Drawing.Size(128, 20);
+            this.reloadActiveProfileToolStripMenuItem1.Text = "Reload Active Profile";
+            this.reloadActiveProfileToolStripMenuItem1.Click += new System.EventHandler(this.reloadActiveProfileToolStripMenuItem_Click);
             // 
             // MainFrame
             // 
@@ -455,6 +482,9 @@ namespace JoystickUsermodeDriver
         private System.Windows.Forms.ListView joystickDeviceList;
         private ColumnHeader Device;
         private ColumnHeader GUID;
+        private ToolStripMenuItem reloadActiveProfileToolStripMenuItem;
+        private ToolStripMenuItem refreshToolStripMenuItem;
+        private ToolStripMenuItem reloadActiveProfileToolStripMenuItem1;
     }
 }
 

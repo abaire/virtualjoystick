@@ -85,10 +85,10 @@ namespace JoystickUsermodeDriver
                     UInt32 numButtons = 0;
                     UInt32 numPOVs = 0;
                     VJoyDriverInterface.GetDeviceInfo(
-                        _driverHandle, 
-                        d.GUID, 
-                        ref numAxes, 
-                        ref numButtons, 
+                        _driverHandle,
+                        d.GUID,
+                        ref numAxes,
+                        ref numButtons,
                         ref numPOVs);
 
                     deviceKey.SetValue("Axes", numAxes);
@@ -103,7 +103,6 @@ namespace JoystickUsermodeDriver
                             VJoyDriverInterface.MappingType.axis,
                             i);
                         mapping.WriteToRegistry(deviceKey, $"Mapping_{index++}");
-
                     }
 
                     for (UInt32 i = 0; i < numButtons; ++i)
@@ -112,7 +111,6 @@ namespace JoystickUsermodeDriver
                             VJoyDriverInterface.MappingType.button,
                             i);
                         mapping.WriteToRegistry(deviceKey, $"Mapping_{index++}");
-
                     }
 
                     for (UInt32 i = 0; i < numPOVs; ++i)
@@ -121,11 +119,11 @@ namespace JoystickUsermodeDriver
                             VJoyDriverInterface.MappingType.pov,
                             i);
                         mapping.WriteToRegistry(deviceKey, $"Mapping_{index++}");
-
                     }
                 }
             }
         }
+
         private void GenerateDefaultProfile()
         {
             using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY, true))
@@ -282,8 +280,8 @@ namespace JoystickUsermodeDriver
                 // If the user clicked OK, update our devices
                 if (dpDlg.isOK)
                 {
-                    RegistryKey k = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY, true);
-                    k.Close();
+                    // RegistryKey k = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY, true);
+                    // k.Close();
 
                     // Notify the driver of the update
                     beginFeedingDriver();
@@ -297,7 +295,6 @@ namespace JoystickUsermodeDriver
                     MessageBoxIcon.Exclamation);
             }
         }
-
 
         private void beginFeedingDriver()
         {
@@ -316,6 +313,10 @@ namespace JoystickUsermodeDriver
 
         private void LoadMappingsIntoDriver()
         {
+            if (_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
+                return;
+            VJoyDriverInterface.ClearDeviceMappings(_driverHandle);
+
             using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY))
             {
                 var activeProfileName = k.GetValue(ACTIVE_PROFILE_NAME);
@@ -410,6 +411,17 @@ namespace JoystickUsermodeDriver
             {
                 Clipboard.SetText(builder.ToString());
             }
+        }
+
+        private void reloadActiveProfileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Cycling the driver will reload the current profile.
+            stopFeedingDriver();
+            beginFeedingDriver();
+        }
+
+        private void refreshToolStripMenuItem_Click(object sender, EventArgs e)
+        {
         }
     }
 }

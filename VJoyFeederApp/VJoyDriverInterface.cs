@@ -67,15 +67,15 @@ namespace JoystickUsermodeDriver
                 MappingType srcBlock,
                 AxisIndex srcIndex,
                 bool invert = false)
-                : this(destBlock, (UInt32)destIndex, srcBlock, (UInt32)srcIndex, invert)
+                : this(destBlock, (UInt32) destIndex, srcBlock, (UInt32) srcIndex, invert)
             {
             }
 
             public DeviceMapping(
                 MappingType destAndSrcBlock,
                 AxisIndex destAndSrcIndex,
-                bool invert = false) 
-                : this(destAndSrcBlock, (UInt32)destAndSrcIndex, destAndSrcBlock, (UInt32)destAndSrcIndex, invert)
+                bool invert = false)
+                : this(destAndSrcBlock, (UInt32) destAndSrcIndex, destAndSrcBlock, (UInt32) destAndSrcIndex, invert)
             {
             }
 
@@ -90,9 +90,9 @@ namespace JoystickUsermodeDriver
             public DeviceMapping(RegistryKey k)
             {
                 var enumType = typeof(MappingType);
-                this.destBlock = (MappingType)Enum.Parse(enumType, k.GetValue(ValueDestBlock).ToString());
+                this.destBlock = (MappingType) Enum.Parse(enumType, k.GetValue(ValueDestBlock).ToString());
                 this.destIndex = Convert.ToUInt32(k.GetValue(ValueDestIndex));
-                this.srcBlock = (MappingType)Enum.Parse(enumType, k.GetValue(ValueSrcBlock).ToString());
+                this.srcBlock = (MappingType) Enum.Parse(enumType, k.GetValue(ValueSrcBlock).ToString());
                 this.srcIndex = Convert.ToUInt32(k.GetValue(ValueSrcIndex));
                 this.invert = Convert.ToInt32(k.GetValue(ValueInvert));
             }
@@ -138,8 +138,12 @@ namespace JoystickUsermodeDriver
         public static extern bool SetDeviceMapping(
             UInt32 h,
             [MarshalAs(UnmanagedType.LPStr)] string deviceGUID,
-            DeviceMapping[] mappings, 
+            DeviceMapping[] mappings,
             Int32 mappingCount);
+
+        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "ClearDeviceMappings",
+            SetLastError = false)]
+        public static extern bool ClearDeviceMappings(UInt32 h);
 
         public delegate void DeviceEnumCallback(
             [MarshalAs(UnmanagedType.LPStr)] string name,

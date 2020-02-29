@@ -126,9 +126,9 @@ VJOYDRIVERINTERFACE_API
 BOOL GetDeviceInfo(
     HANDLE attachID,
     _In_ const char* deviceGUIDStr,
-    _Out_ UINT32 * numAxes,
-    _Out_ UINT32 * numButtons,
-    _Out_ UINT32 * numPOVs)
+    _Out_ UINT32* numAxes,
+    _Out_ UINT32* numButtons,
+    _Out_ UINT32* numPOVs)
 {
     HandleMap::iterator it = g_driverHandles.find(attachID);
     if (it == g_driverHandles.end())
@@ -141,7 +141,7 @@ BOOL GetDeviceInfo(
 
 extern "C"
 VJOYDRIVERINTERFACE_API
-BOOL SetDeviceMapping(HANDLE attachID, const char* deviceGUIDStr, const DeviceMapping * mappings, size_t mappingCount)
+BOOL SetDeviceMapping(HANDLE attachID, const char* deviceGUIDStr, const DeviceMapping* mappings, size_t mappingCount)
 {
     HandleMap::iterator it = g_driverHandles.find(attachID);
     if (it == g_driverHandles.end())
@@ -154,6 +154,15 @@ BOOL SetDeviceMapping(HANDLE attachID, const char* deviceGUIDStr, const DeviceMa
     return it->second.AddDeviceMapping(guid, mappingVector);
 }
 
+extern "C"
+VJOYDRIVERINTERFACE_API
+BOOL ClearDeviceMappings(HANDLE attachID)
+{
+    HandleMap::iterator it = g_driverHandles.find(attachID);
+    if (it == g_driverHandles.end())
+        return FALSE;
+    return it->second.ClearDeviceMappings();
+}
 
 
 static inline void ParseGUID(GUID& ret, const char* str)

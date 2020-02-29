@@ -66,6 +66,12 @@ public:
         return TRUE;
     }
 
+    inline BOOL ClearDeviceMappings()
+    {
+        m_deviceGUIDMapping.clear();
+        return TRUE;
+    }
+
     BOOL EnumerateDevices(DeviceEnumCB cb);
     BOOL GetDeviceInfo(
         const GUID& deviceGUID,

@@ -91,4 +91,7 @@ BOOL GetDeviceInfo(
 VJOYDRIVERINTERFACE_API
 BOOL SetDeviceMapping(HANDLE driver, const char* deviceGUID, const DeviceMapping* mappings, size_t mappingCount);
 
+VJOYDRIVERINTERFACE_API
+BOOL ClearDeviceMappings(HANDLE driver);
+
 } // extern "C"
