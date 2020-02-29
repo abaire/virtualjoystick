@@ -277,7 +277,8 @@ inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(DEVICE_PACKET& packet)
 
             // ** DS_POV ** //
         case DS_POV:
-            report.POV[it->destIndex] = MAP_RANGE(m_state.rgdwPOV[it->srcIndex]);
+            // report.POV[it->destIndex] = MAP_RANGE(m_state.rgdwPOV[it->srcIndex]);
+            report.POV = MAP_RANGE(m_state.rgdwPOV[it->srcIndex]);
             break;
 
             // ** DS_BUTTON ** //

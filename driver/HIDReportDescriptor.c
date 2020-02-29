@@ -82,13 +82,12 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
     0x81, 0x02, //   INPUT (Data,Var,Abs)
 
     0x05, USAGE_PAGE_GENERIC_DESKTOP, //   USAGE_PAGE (generic)
-  0x09, 0x39,        //   USAGE (Hat switch)
-  0x15, 0,           //   LOGICAL_MINIMUM (0)
-  0x25, 7,      //   LOGICAL_MAXIMUM
-  0x75, 0x08,        //   REPORT_SIZE (8)
-  0x95, 0x04,        //   REPORT_COUNT (4)
-  0x81, 0x02,        //   INPUT (Data,Var,Abs)
-    // 0x09, USAGE_HAT_SWITCH, //   USAGE (Hat switch)
+    0x09, USAGE_HAT_SWITCH, //   USAGE (Hat switch)
+    0x15, 0, //   LOGICAL_MINIMUM (0)
+    0x25, 7, //   LOGICAL_MAXIMUM
+    0x75, 0x08, //   REPORT_SIZE (8)
+    0x95, 1, //   REPORT_COUNT
+    0x81, 0x02, //   INPUT (Data,Var,Abs)
     // 0x15, 0xFF, //   LOGICAL_MINIMUM (-1)
     // 0x25, 7, //   LOGICAL_MAXIMUM (7)
     // 0x75, 0x08, //   REPORT_SIZE (8)
@@ -127,7 +126,7 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
     0x15, 0xFF, //   LOGICAL_MINIMUM (-1)
     0x25, 7, //   LOGICAL_MAXIMUM (7)
     0x75, 0x08, //   REPORT_SIZE (8)
-    0x95, 4, //   REPORT_COUNT: POV
+    0x95, 1, //   REPORT_COUNT: POV
     0x09, 0x02, //   USAGE (Vendor Usage 1)
     0x91, 0x02, //   OUTPUT (Data,Var,Abs)
 

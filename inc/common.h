@@ -46,9 +46,11 @@ typedef struct _DEVICE_REPORT
     INT16 Slider[2];
     // INT16 Dial[4];
 
-    INT8  POV[4];
+    INT8  POV;// [4] ;
 
     UCHAR Button[16];  // 128 button bits
+
+    // INT8 ExtendedPOV[3];
 } DEVICE_REPORT, * PDEVICE_REPORT;
 
 typedef struct _Device_Packet
