@@ -15,8 +15,10 @@
 #include "DriverInterface.h"
 
 //= G L O B A L = V A R S =====================================================================
-typedef std::map<HANDLE, CDriverInterface> HandleMap_t;
-static HandleMap_t g_driverHandles;
+typedef std::map<HANDLE, CDriverInterface> HandleMap;
+static HandleMap g_driverHandles;
+
+static inline void ParseGUID(GUID& ret, const char* str);
 
 
 //= F U N C T I O N S =========================================================================
@@ -72,7 +74,7 @@ extern "C"
 VJOYDRIVERINTERFACE_API
 BOOL BeginDriverUpdateLoop(HANDLE attachID)
 {
-    HandleMap_t::iterator it = g_driverHandles.find(attachID);
+    HandleMap::iterator it = g_driverHandles.find(attachID);
     if (it == g_driverHandles.end())
         return FALSE;
 
@@ -84,7 +86,7 @@ extern "C"
 VJOYDRIVERINTERFACE_API
 BOOL EndDriverUpdateLoop(HANDLE attachID)
 {
-    HandleMap_t::iterator it = g_driverHandles.find(attachID);
+    HandleMap::iterator it = g_driverHandles.find(attachID);
     if (it == g_driverHandles.end())
         return FALSE;
 
@@ -96,7 +98,7 @@ extern "C"
 VJOYDRIVERINTERFACE_API
 BOOL DetachFromVirtualJoystickDriver(HANDLE attachID)
 {
-    HandleMap_t::iterator it = g_driverHandles.find(attachID);
+    HandleMap::iterator it = g_driverHandles.find(attachID);
     if (it == g_driverHandles.end())
         return FALSE;
 
@@ -110,14 +112,48 @@ BOOL DetachFromVirtualJoystickDriver(HANDLE attachID)
 
 extern "C"
 VJOYDRIVERINTERFACE_API
-BOOL EnumerateDevices(HANDLE attachID, DeviceEnumCB callbackFunct)
+BOOL EnumerateDevices(HANDLE attachID, DeviceEnumCB callbackFunc)
 {
-    HandleMap_t::iterator it = g_driverHandles.find(attachID);
+    HandleMap::iterator it = g_driverHandles.find(attachID);
     if (it == g_driverHandles.end())
         return FALSE;
 
-    return it->second.EnumerateDevices(callbackFunct);
+    return it->second.EnumerateDevices(callbackFunc);
 }
+
+extern "C"
+VJOYDRIVERINTERFACE_API
+BOOL GetDeviceInfo(
+    HANDLE attachID,
+    _In_ const char* deviceGUIDStr,
+    _Out_ UINT32 * numAxes,
+    _Out_ UINT32 * numButtons,
+    _Out_ UINT32 * numPOVs)
+{
+    HandleMap::iterator it = g_driverHandles.find(attachID);
+    if (it == g_driverHandles.end())
+        return FALSE;
+
+    GUID deviceGUID;
+    ParseGUID(deviceGUID, deviceGUIDStr);
+    return it->second.GetDeviceInfo(deviceGUID, *numAxes, *numButtons, *numPOVs);
+}
+
+extern "C"
+VJOYDRIVERINTERFACE_API
+BOOL SetDeviceMapping(HANDLE attachID, const char* deviceGUIDStr, const DeviceMapping * mappings, size_t mappingCount)
+{
+    HandleMap::iterator it = g_driverHandles.find(attachID);
+    if (it == g_driverHandles.end())
+        return FALSE;
+
+    CJoystickDevice::DeviceMappingVector mappingVector(mappings, mappings + mappingCount);
+    GUID guid;
+    ParseGUID(guid, deviceGUIDStr);
+
+    return it->second.AddDeviceMapping(guid, mappingVector);
+}
+
 
 
 static inline void ParseGUID(GUID& ret, const char* str)
@@ -149,20 +185,4 @@ static inline void ParseGUID(GUID& ret, const char* str)
     ret.Data4[5] = val4_6;
     ret.Data4[6] = val4_7;
     ret.Data4[7] = val4_8;
-}
-
-
-extern "C"
-VJOYDRIVERINTERFACE_API
-BOOL SetDeviceMapping(HANDLE attachID, const char* deviceGUIDStr, const DeviceMapping* mappings, size_t mappingCount)
-{
-    HandleMap_t::iterator it = g_driverHandles.find(attachID);
-    if (it == g_driverHandles.end())
-        return FALSE;
-
-    CJoystickDevice::DeviceMappingVector mappingVector(mappings, mappings + mappingCount);
-    GUID guid;
-    ParseGUID(guid, deviceGUIDStr);
-
-    return it->second.AddDeviceMapping(guid, mappingVector);
 }

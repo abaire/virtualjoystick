@@ -12,6 +12,15 @@ namespace JoystickUsermodeDriver
         [STAThread]
         static void Main()
         {
+            var entryAssembly = System.Reflection.Assembly.GetEntryAssembly().Location;
+            var processName = System.IO.Path.GetFileNameWithoutExtension(entryAssembly);
+
+            // Prevent duplicate instances.
+            if (System.Diagnostics.Process.GetProcessesByName(processName).Length > 1)
+            {
+                return;
+            }
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainFrame());

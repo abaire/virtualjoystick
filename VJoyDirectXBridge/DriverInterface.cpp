@@ -29,8 +29,7 @@ static const GUID PRODUCT_VJOY = {0x0001EBA0, 0x0000, 0x0000, {0x00, 0x00, 0x50,
 LPDIRECTINPUT8 CDriverInterface::m_pDI = NULL;
 
 //= P R O T O T Y P E S =======================================================================
-static BOOL CALLBACK EnumJoysticksForFrontend(const DIDEVICEINSTANCE* inst, VOID* pContext);
-
+static BOOL CALLBACK EnumJoysticksForFrontend(const DIDEVICEINSTANCE* inst, VOID* context);
 
 //= F U N C T I O N S =========================================================================
 
@@ -210,6 +209,49 @@ BOOL CDriverInterface::EnumerateDevices(DeviceEnumCB cb)
     }
 
     return TRUE;
+}
+
+
+BOOL CDriverInterface::GetDeviceInfo(
+    const GUID& deviceGUID,
+    UINT32& numAxes,
+    UINT32& numButtons,
+    UINT32& numPOVs)
+{
+    BOOL releaseAfterOp = FALSE;
+    BOOL ret = TRUE;
+    if (!m_pDI)
+    {
+        OpenDirectXHandle();
+        releaseAfterOp = TRUE;
+    }
+
+    LPDIRECTINPUTDEVICE8 device;
+    if (FAILED(m_pDI->CreateDevice(deviceGUID, &device, NULL)))
+    {
+        ret = FALSE;
+        goto cleanup;
+    }
+
+    DIDEVCAPS capabilities;
+    capabilities.dwSize = sizeof(DIDEVCAPS);
+    if (FAILED(device->GetCapabilities(&capabilities)))
+    {
+        ret = FALSE;
+        goto cleanup;
+    }
+
+    numAxes = capabilities.dwAxes;
+    numButtons = capabilities.dwButtons;
+    numPOVs = capabilities.dwPOVs;
+
+cleanup:
+    if (releaseAfterOp)
+    {
+        SAFE_RELEASE(m_pDI);
+    }
+
+    return ret;
 }
 
 static BOOL CALLBACK EnumJoysticksForFrontend(const DIDEVICEINSTANCE* inst, VOID* pContext)

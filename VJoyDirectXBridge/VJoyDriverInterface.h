@@ -81,6 +81,14 @@ VJOYDRIVERINTERFACE_API
 BOOL EnumerateDevices(HANDLE driver, DeviceEnumCB callbackFunc);
 
 VJOYDRIVERINTERFACE_API
+BOOL GetDeviceInfo(
+    HANDLE driver, 
+    _In_ const char* deviceGUID, 
+    _Out_ UINT32* numAxes, 
+    _Out_ UINT32* numButtons,
+    _Out_ UINT32* numPOVs);
+
+VJOYDRIVERINTERFACE_API
 BOOL SetDeviceMapping(HANDLE driver, const char* deviceGUID, const DeviceMapping* mappings, size_t mappingCount);
 
 } // extern "C"

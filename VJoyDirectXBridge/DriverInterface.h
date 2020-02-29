@@ -67,6 +67,11 @@ public:
     }
 
     BOOL EnumerateDevices(DeviceEnumCB cb);
+    BOOL GetDeviceInfo(
+        const GUID& deviceGUID,
+        UINT32& numAxes,
+        UINT32& numButtons,
+        UINT32& numPOVs);
 
     BOOL RunUpdateThread(void);
     BOOL ExitUpdateThread(void);

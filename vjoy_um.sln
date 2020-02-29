@@ -17,6 +17,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VJoyDirectXBridge", "VJoyDirectXBridge\VJoyDirectXBridge.vcxproj", "{2A5AA2C5-82EF-42AE-B65E-0F824726DB55}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VJoyFeederApp", "VJoyFeederApp\VJoyFeederApp.csproj", "{B24B85C1-CCD2-4A30-9B54-51C27C2CC589}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2A5AA2C5-82EF-42AE-B65E-0F824726DB55} = {2A5AA2C5-82EF-42AE-B65E-0F824726DB55}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

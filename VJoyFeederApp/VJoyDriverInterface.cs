@@ -148,5 +148,14 @@ namespace JoystickUsermodeDriver
         [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "EnumerateDevices",
             SetLastError = false)]
         public static extern bool EnumerateDevices(UInt32 h, DeviceEnumCallback cb);
+
+        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "GetDeviceInfo",
+            SetLastError = false)]
+        public static extern bool GetDeviceInfo(
+            UInt32 h,
+            [MarshalAs(UnmanagedType.LPStr)] string deviceGUID,
+            ref UInt32 numAxes,
+            ref UInt32 numButtons,
+            ref UInt32 numPOVs);
     }
 }
