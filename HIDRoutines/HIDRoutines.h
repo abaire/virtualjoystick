@@ -24,18 +24,4 @@
 BOOL FindJoystickDeviceName(TCHAR** ret);
 
 
-// Debugging stuff, no longer needed, use WriteFile instead
-#if 0
-  //-------------------------------------------------------------------------------------------
-    //	SendJoystickDevicePacket
-    //! \brief		Sends the given device packet to the given joystick driver handle
-  //!
-  //! \param    driverHandle - Open handle to the driver to send the device packet to
-  //! \param    devicePacket - Device packet to send
-  //!
-  //! \return   BOOL - TRUE if the packet was successfully sent
-  //-------------------------------------------------------------------------------------------
-BOOL SendJoystickDevicePacket(HANDLE driverHandle, const PDEVICE_PACKET devicePacket);
-#endif
-
 #endif
