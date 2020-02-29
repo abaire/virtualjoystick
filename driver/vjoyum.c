@@ -585,6 +585,10 @@ Return Value:
             status = WdfIoQueueRetrieveNextRequest(QueueContext->DeviceContext->ManualQueue, &readReportReq);
             if (!NT_SUCCESS(status))
             {
+                if (status == STATUS_NO_MORE_ENTRIES || status == STATUS_WDF_PAUSED)
+                {
+                    return STATUS_SUCCESS;
+                }
                 KdPrintEx((
                     T_WARNING, 
                     "WriteReport: WdfIoQueueRetrieveNextRequest status %ld (0x%X)\n", 
