@@ -19,7 +19,7 @@ namespace JoystickUsermodeDriver
         UInt32 _driverHandle; //!< Handle to the virtual joystick driver instance
 
         //! List of DeviceDescription instances for available physical devices
-        List<DeviceDescription> _deviceEnumeration; 
+        List<DeviceDescription> _deviceEnumeration;
 
         public MainFrame()
         {
@@ -116,7 +116,7 @@ namespace JoystickUsermodeDriver
 
                 mapping = new VJoyDriverInterface.DeviceMapping(
                     VJoyDriverInterface.MappingType.pov,
-                    (UInt32)0);
+                    (UInt32) 0);
                 mapping.WriteToRegistry(xbox_controller, $"Mapping_{index++}");
 
                 for (UInt32 i = 0; i < 10; ++i)
@@ -177,7 +177,8 @@ namespace JoystickUsermodeDriver
 
         public List<DeviceDescription> DeviceEnumeration
         {
-            get {
+            get
+            {
                 if (_deviceEnumeration.Count == 0)
                 {
                     if (!VJoyDriverInterface.EnumerateDevices(_driverHandle,
@@ -188,8 +189,8 @@ namespace JoystickUsermodeDriver
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Exclamation);
                     }
-
                 }
+
                 return _deviceEnumeration;
             }
         }
@@ -205,6 +206,7 @@ namespace JoystickUsermodeDriver
                 data[1] = d.GUID;
                 this.joystickDeviceList.Items.Add(new ListViewItem(data));
             }
+
             this.joystickDeviceList.Columns[0].Width = -1;
             this.joystickDeviceList.Columns[1].Width = -1;
         }
@@ -222,12 +224,6 @@ namespace JoystickUsermodeDriver
                 if (dpDlg.isOK)
                 {
                     RegistryKey k = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY, true);
-
-                    //m_joystickGUID = dpDlg.joystickDevice.GUID;
-                    //m_rudderGUID = dpDlg.rudderDevice.GUID;
-
-                    //k.SetValue("JOYSTICK_GUID", m_joystickGUID);
-                    //k.SetValue("RUDDER_GUID", m_rudderGUID);
                     k.Close();
 
                     // Notify the driver of the update
@@ -275,9 +271,6 @@ namespace JoystickUsermodeDriver
                 }
 
                 this.LoadMappingsForProfile(k, activeProfileName.ToString());
-
-
-               // VJoyDriverInterface.SetDeviceMapping(_driverHandle, Guid, mappings, mappingCuont);
             }
         }
 
@@ -295,7 +288,7 @@ namespace JoystickUsermodeDriver
                     return;
                 }
 
-                foreach (var deviceID in activeProfile.GetSubKeyNames()) 
+                foreach (var deviceID in activeProfile.GetSubKeyNames())
                 {
                     this.LoadMappingsForDevice(activeProfile, deviceID);
                 }
@@ -305,7 +298,7 @@ namespace JoystickUsermodeDriver
         private void LoadMappingsForDevice(RegistryKey profileKey, string deviceID)
         {
             using (RegistryKey device = profileKey.OpenSubKey(deviceID))
-            { 
+            {
                 if (device == null)
                 {
                     MessageBox.Show(
@@ -330,6 +323,7 @@ namespace JoystickUsermodeDriver
                                 MessageBoxIcon.Exclamation);
                             return;
                         }
+
                         var m = new VJoyDriverInterface.DeviceMapping(mappingKey);
                         mappings.Add(m);
                     }

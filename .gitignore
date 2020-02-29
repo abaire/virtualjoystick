@@ -3,6 +3,7 @@
 *.log
 *.pdb
 *.ncb
+*.aps
 obj/
 
 .vs/
