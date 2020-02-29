@@ -173,20 +173,9 @@ DWORD CDriverInterface::UpdateThreadProc(void)
         packet.report.rZ = MAKE_VAL(10000);
 
         packet.report.POV = (temp / 100) % 7;
-        // packet.report.POV[0] = 1;
-        // packet.report.POV[1] = 3;
-        // packet.report.POV[2] = 6;
-        // packet.report.POV[3] = 7;
 
-        packet.report.Slider[0] = MAKE_VAL(0);
-        packet.report.Slider[1] = MAKE_VAL(5000);
-        // packet.report.Slider[2] = MAKE_VAL(10000);
-        // packet.report.Slider[3] = MAKE_VAL(15000);
-        //
-        // packet.report.Dial[0] = MAKE_VAL(-5000);
-        // packet.report.Dial[1] = MAKE_VAL(-10000);
-        // packet.report.Dial[2] = MAKE_VAL(-15000);
-        // packet.report.Dial[3] = MAKE_VAL(-20000);
+        packet.report.Slider = MAKE_VAL(0);
+        packet.report.Dial = MAKE_VAL(5000);
 
         // Send the request on to the driver
         DWORD bytesWritten;

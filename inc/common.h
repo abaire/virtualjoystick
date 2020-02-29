@@ -37,16 +37,16 @@ typedef struct _DEVICE_REPORT
     INT16 Y;
 
     INT16 Throttle;
-    // INT16 Rudder;
+    INT16 Rudder;
 
     INT16 rX;
     INT16 rY;
     INT16 rZ;
 
-    INT16 Slider[2];
-    // INT16 Dial[4];
+    INT16 Slider;
+    INT16 Dial;
 
-    INT8  POV;// [4] ;
+    INT8  POV;
 
     UCHAR Button[16];  // 128 button bits
 

@@ -46,23 +46,17 @@ public:
     //! \brief  Defines the index of the various axes in the JOYSTATEAXISOFFSETS
     enum AxisIndex
     {
-        AXIS_X = 0,
-        AXIS_Y,
-        AXIS_THROTTLE,
-        AXIS_RX,
-        AXIS_RY,
-        AXIS_RZ,
-        AXIS_S0,
-        AXIS_S1,
+        axis_x = 0,
+        axis_y,
+        axis_throttle,
+        axis_rx,
+        axis_ry,
+        axis_rz,
+        axis_slider,
+        axis_dial,
 
-        // These axes are particular to the virtual device.
-        AXIS_RUDDER,
-        AXIS_S2,
-        AXIS_S3,
-        AXIS_DIAL_0,
-        AXIS_DIAL_1,
-        AXIS_DIAL_2,
-        AXIS_DIAL_3,
+        // Additional axes are not available in DIJOYSTATE2.
+        axis_rudder,
     };
 
     //! \struct DeviceMapping
@@ -153,6 +147,7 @@ protected:
     LPDIRECTINPUTDEVICE8 m_handle; //!< dinput handle to the physical device being wrapped by this instance
 
     DIJOYSTATE2 m_state; //!< The current state of the physical joystick represented by this instance
+
     static INT_PTR JOYSTATEAXISOFFSETS[8];
     //!< byte offset from the head of a DIJOYSTATE2 struct to the DWORD axis values
 
@@ -178,65 +173,41 @@ static __inline void SetButton(DEVICE_PACKET& packet, UINT32 index, BOOL val)
 
 inline void SetReportAxis(DEVICE_REPORT& report, CJoystickDevice::AxisIndex axis, INT16 value) {
     switch (axis) {
-    case CJoystickDevice::AxisIndex::AXIS_X:
+    case CJoystickDevice::AxisIndex::axis_x:
         report.X = value;
         return;
 
-    case CJoystickDevice::AxisIndex::AXIS_Y:
+    case CJoystickDevice::AxisIndex::axis_y:
         report.Y = value;
         return;
 
-            case CJoystickDevice::AxisIndex::AXIS_THROTTLE:
+            case CJoystickDevice::AxisIndex::axis_throttle:
                 report.Throttle = value;
                 return;
 
-            case CJoystickDevice::AxisIndex::AXIS_RX:
+            case CJoystickDevice::AxisIndex::axis_rx:
                 report.rX = value;
                 return;
 
-            case CJoystickDevice::AxisIndex::AXIS_RY:
+            case CJoystickDevice::AxisIndex::axis_ry:
                 report.rY = value;
                 return;
 
-            case CJoystickDevice::AxisIndex::AXIS_RZ:
+            case CJoystickDevice::AxisIndex::axis_rz:
                 report.rZ = value;
                 return;
 
-            case CJoystickDevice::AxisIndex::AXIS_S0:
-                report.Slider[0] = value;
+            case CJoystickDevice::AxisIndex::axis_slider:
+                report.Slider = value;
                 return;
 
-            case CJoystickDevice::AxisIndex::AXIS_S1:
-                report.Slider[1] = value;
+            case CJoystickDevice::AxisIndex::axis_dial:
+                report.Dial = value;
                 return;
 
-            // case CJoystickDevice::AxisIndex::AXIS_RUDDER:
-            //     report.Rudder = value;
-            //     return;
-            //
-            // case CJoystickDevice::AxisIndex::AXIS_S2:
-            //     report.Slider[2] = value;
-            //     return;
-            //
-            // case CJoystickDevice::AxisIndex::AXIS_S3:
-            //     report.Slider[3] = value;
-            //     return;
-            //
-            // case CJoystickDevice::AxisIndex::AXIS_DIAL_0:
-            //     report.Dial[0] = value;
-            //     return;
-            //
-            // case CJoystickDevice::AxisIndex::AXIS_DIAL_1:
-            //     report.Dial[1] = value;
-            //     return;
-            //
-            // case CJoystickDevice::AxisIndex::AXIS_DIAL_2:
-            //     report.Dial[2] = value;
-            //     return;
-            //
-            // case CJoystickDevice::AxisIndex::AXIS_DIAL_3:
-            //     report.Dial[3] = value;
-            //     return;
+            case CJoystickDevice::AxisIndex::axis_rudder:
+                report.Rudder = value;
+                return;
     }
 }
 
@@ -269,15 +240,15 @@ inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(DEVICE_PACKET& packet)
                 // to UINT32 *, dereference as a UINT32, and then cast that value to an INT16 for return (we've
                 // previously set the device up to return values in the 16 bit range)
                 INT16 src = (INT16)*((LONG*)(((BYTE*)&m_state) + JOYSTATEAXISOFFSETS[it->srcIndex]));
-                if (it->invert)
+                if (it->invert) {
                     src = AXIS_MAX - src;
+                }
                 SetReportAxis(report, static_cast<CJoystickDevice::AxisIndex>(it->destIndex), src);
             }
             break;
 
             // ** DS_POV ** //
         case DS_POV:
-            // report.POV[it->destIndex] = MAP_RANGE(m_state.rgdwPOV[it->srcIndex]);
             report.POV = MAP_RANGE(m_state.rgdwPOV[it->srcIndex]);
             break;
 

@@ -32,14 +32,14 @@ CJoystickDevice::CJoystickDevice(
     {
         DIJOYSTATE2 tmp;
         INT_PTR base = (INT_PTR)&tmp;
-        JOYSTATEAXISOFFSETS[AXIS_X] = (INT_PTR)&tmp.lX - base;
-        JOYSTATEAXISOFFSETS[AXIS_Y] = (INT_PTR)&tmp.lY - base;
-        JOYSTATEAXISOFFSETS[AXIS_THROTTLE] = (INT_PTR)&tmp.lZ - base;
-        JOYSTATEAXISOFFSETS[AXIS_RX] = (INT_PTR)&tmp.lRx - base;
-        JOYSTATEAXISOFFSETS[AXIS_RY] = (INT_PTR)&tmp.lRy - base;
-        JOYSTATEAXISOFFSETS[AXIS_RZ] = (INT_PTR)&tmp.lRz - base;
-        JOYSTATEAXISOFFSETS[AXIS_S0] = (INT_PTR)&tmp.rglSlider[0] - base;
-        JOYSTATEAXISOFFSETS[AXIS_S1] = (INT_PTR)&tmp.rglSlider[1] - base;
+        JOYSTATEAXISOFFSETS[axis_x] = (INT_PTR)&tmp.lX - base;
+        JOYSTATEAXISOFFSETS[axis_y] = (INT_PTR)&tmp.lY - base;
+        JOYSTATEAXISOFFSETS[axis_throttle] = (INT_PTR)&tmp.lZ - base;
+        JOYSTATEAXISOFFSETS[axis_rx] = (INT_PTR)&tmp.lRx - base;
+        JOYSTATEAXISOFFSETS[axis_ry] = (INT_PTR)&tmp.lRy - base;
+        JOYSTATEAXISOFFSETS[axis_rz] = (INT_PTR)&tmp.lRz - base;
+        JOYSTATEAXISOFFSETS[axis_slider] = (INT_PTR)&tmp.rglSlider[0] - base;
+        JOYSTATEAXISOFFSETS[axis_dial] = (INT_PTR)&tmp.rglSlider[1] - base;
     }
 }
 

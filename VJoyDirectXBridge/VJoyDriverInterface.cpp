@@ -191,19 +191,16 @@ BOOL SetDeviceIDs(HANDLE attachID, const char* joystickGUIDStr, const char* rudd
         CJoystickDevice::DeviceMappingVector mappingVector;
 
         CJoystickDevice::DeviceMapping m;
-        MAPAXIS(CJoystickDevice::AXIS_X, CJoystickDevice::AXIS_X);
+        MAPAXIS(CJoystickDevice::axis_x, CJoystickDevice::axis_x);
         mappingVector.push_back(m);
 
-        MAPAXIS(CJoystickDevice::AXIS_Y, CJoystickDevice::AXIS_Y);
+        MAPAXIS(CJoystickDevice::axis_y, CJoystickDevice::axis_y);
         mappingVector.push_back(m);
 
-        MAPAXIS(CJoystickDevice::AXIS_THROTTLE, CJoystickDevice::AXIS_S0);
+        MAPAXIS(CJoystickDevice::axis_throttle, CJoystickDevice::axis_slider);
         mappingVector.push_back(m);
 
-        MAPAXIS(CJoystickDevice::AXIS_S0, CJoystickDevice::AXIS_S1);
-        mappingVector.push_back(m);
-
-        MAPAXIS(CJoystickDevice::AXIS_S1, CJoystickDevice::AXIS_RZ);
+        MAPAXIS(CJoystickDevice::axis_slider, CJoystickDevice::axis_dial);
         mappingVector.push_back(m);
 
         // Map buttons
@@ -243,13 +240,13 @@ BOOL SetDeviceIDs(HANDLE attachID, const char* joystickGUIDStr, const char* rudd
         CJoystickDevice::DeviceMappingVector mappingVector;
 
         CJoystickDevice::DeviceMapping m;
-        MAPAXIS(CJoystickDevice::AXIS_RX, CJoystickDevice::AXIS_X); // X axis is left pedal (inverted)
+        MAPAXIS(CJoystickDevice::axis_rx, CJoystickDevice::axis_x); // X axis is left pedal (inverted)
         mappingVector.push_back(m);
         
-        MAPAXIS(CJoystickDevice::AXIS_RY, CJoystickDevice::AXIS_Y); // Y axis is right pedal (inverted)
+        MAPAXIS(CJoystickDevice::axis_ry, CJoystickDevice::axis_y); // Y axis is right pedal (inverted)
         mappingVector.push_back(m);
         
-        MAPAXIS(CJoystickDevice::AXIS_RZ, CJoystickDevice::AXIS_RZ); // RZ axis is rudder
+        MAPAXIS(CJoystickDevice::axis_rz, CJoystickDevice::axis_rz); // RZ axis is rudder
         mappingVector.push_back(m);
 
 
