@@ -21,12 +21,11 @@ static HandleMap_t g_driverHandles;
 
 //= F U N C T I O N S =========================================================================
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
-BOOL APIENTRY DllMain(HMODULE hModule,
-                      DWORD ul_reason_for_call,
-                      LPVOID lpReserved)
+
+BOOL APIENTRY DllMain(
+    HMODULE hModule,
+    DWORD ul_reason_for_call,
+    LPVOID lpReserved)
 {
     switch (ul_reason_for_call)
     {
@@ -40,12 +39,9 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 }
 
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
 extern "C"
 VJOYDRIVERINTERFACE_API
-HANDLE AttachToDriver(void)
+HANDLE AttachToVirtualJoystickDriver(void)
 {
     // Find our driver instance
     std::string deviceName;
@@ -71,9 +67,7 @@ HANDLE AttachToDriver(void)
     return handle.DriverHandle();
 }
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
+
 extern "C"
 VJOYDRIVERINTERFACE_API
 BOOL BeginDriverUpdateLoop(HANDLE attachID)
@@ -85,9 +79,7 @@ BOOL BeginDriverUpdateLoop(HANDLE attachID)
     return it->second.RunUpdateThread();
 }
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
+
 extern "C"
 VJOYDRIVERINTERFACE_API
 BOOL EndDriverUpdateLoop(HANDLE attachID)
@@ -100,12 +92,9 @@ BOOL EndDriverUpdateLoop(HANDLE attachID)
 }
 
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
 extern "C"
 VJOYDRIVERINTERFACE_API
-BOOL DetachFromDriver(HANDLE attachID)
+BOOL DetachFromVirtualJoystickDriver(HANDLE attachID)
 {
     HandleMap_t::iterator it = g_driverHandles.find(attachID);
     if (it == g_driverHandles.end())
@@ -119,9 +108,6 @@ BOOL DetachFromDriver(HANDLE attachID)
 }
 
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
 extern "C"
 VJOYDRIVERINTERFACE_API
 BOOL EnumerateDevices(HANDLE attachID, DeviceEnumCB callbackFunct)
@@ -134,9 +120,6 @@ BOOL EnumerateDevices(HANDLE attachID, DeviceEnumCB callbackFunct)
 }
 
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
 static inline void ParseGUID(GUID& ret, const char* str)
 {
     UINT32 val1, val2, val3, val4_1, val4_2, val4_3, val4_4, val4_5, val4_6, val4_7, val4_8;
@@ -168,95 +151,18 @@ static inline void ParseGUID(GUID& ret, const char* str)
     ret.Data4[7] = val4_8;
 }
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
+
 extern "C"
 VJOYDRIVERINTERFACE_API
-BOOL SetDeviceIDs(HANDLE attachID, const char* joystickGUIDStr, const char* rudderGUIDStr)
+BOOL SetDeviceMapping(HANDLE attachID, const char* deviceGUIDStr, const DeviceMapping* mappings, size_t mappingCount)
 {
     HandleMap_t::iterator it = g_driverHandles.find(attachID);
     if (it == g_driverHandles.end())
         return FALSE;
 
-    CDriverInterface::DeviceIDMapping mapping;
+    CJoystickDevice::DeviceMappingVector mappingVector(mappings, mappings + mappingCount);
+    GUID guid;
+    ParseGUID(guid, deviceGUIDStr);
 
-#define MAP( db, di, sb, si )  m.destBlock = db, m.destIndex = di, m.srcBlock = sb, m.srcIndex = si, m.invert = FALSE
-#define MAPAXIS( di, si ) m.destBlock = m.srcBlock = CJoystickDevice::DS_AXIS, m.destIndex = di, m.srcIndex = si, m.invert = FALSE
-#define MAPBUTTON( index )  m.destBlock = m.srcBlock = CJoystickDevice::DS_BUTTON, m.destIndex = m.srcIndex = index, m.invert = FALSE
-
-    {
-        GUID joystickGUID;
-        ParseGUID(joystickGUID, joystickGUIDStr);
-        CJoystickDevice::DeviceMappingVector mappingVector;
-
-        CJoystickDevice::DeviceMapping m;
-
-        // Xbox controller
-        MAPAXIS(CJoystickDevice::axis_x, CJoystickDevice::axis_x);
-        mappingVector.push_back(m);
-
-        MAPAXIS(CJoystickDevice::axis_y, CJoystickDevice::axis_y);
-        mappingVector.push_back(m);
-
-        MAPAXIS(CJoystickDevice::axis_throttle, CJoystickDevice::axis_throttle);
-        mappingVector.push_back(m);
-
-        MAPAXIS(CJoystickDevice::axis_rx, CJoystickDevice::axis_rx);
-        mappingVector.push_back(m);
-
-        MAPAXIS(CJoystickDevice::axis_ry, CJoystickDevice::axis_ry);
-        mappingVector.push_back(m);
-
-        // Map buttons
-        for (UINT32 i = 0; i < 12; ++i)
-        {
-            MAPBUTTON(i);
-            mappingVector.push_back(m);
-        }
-
-        // Map our POV's
-#ifdef HATS_AS_BUTTONS
-                // Clear the old button mappings
-                MAPBUTTON(HAT_1_AS_BUTTONS_OFFSET);
-                dev.ClearMapping(m);
-                MAPBUTTON(HAT_1_AS_BUTTONS_OFFSET + 1);
-                dev.ClearMapping(m);
-                MAPBUTTON(HAT_1_AS_BUTTONS_OFFSET + 2);
-                dev.ClearMapping(m);
-                MAPBUTTON(HAT_1_AS_BUTTONS_OFFSET + 3);
-                dev.ClearMapping(m);
-        
-                MAP(CJoystickDevice::DS_BUTTON, HAT_1_AS_BUTTONS_OFFSET, CJoystickDevice::DS_POV, 0);
-                mappingVector.push_back(m);
-#else
-        MAP(CJoystickDevice::DS_POV, 0, CJoystickDevice::DS_POV, 0);
-        mappingVector.push_back(m);
-#endif
-
-
-        mapping[joystickGUID] = mappingVector;
-    }
-
-    if (strcmp(joystickGUIDStr, rudderGUIDStr))
-    {
-        GUID rudderGUID;
-        ParseGUID(rudderGUID, rudderGUIDStr);
-        CJoystickDevice::DeviceMappingVector mappingVector;
-
-        CJoystickDevice::DeviceMapping m;
-        MAPAXIS(CJoystickDevice::axis_rx, CJoystickDevice::axis_x); // X axis is left pedal (inverted)
-        mappingVector.push_back(m);
-        
-        MAPAXIS(CJoystickDevice::axis_ry, CJoystickDevice::axis_y); // Y axis is right pedal (inverted)
-        mappingVector.push_back(m);
-        
-        MAPAXIS(CJoystickDevice::axis_rz, CJoystickDevice::axis_rz); // RZ axis is rudder
-        mappingVector.push_back(m);
-
-
-        mapping[rudderGUID] = mappingVector;
-    }
-
-    return it->second.SetDeviceMapping(mapping);
+    return it->second.AddDeviceMapping(guid, mappingVector);
 }

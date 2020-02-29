@@ -54,6 +54,12 @@ public:
     CDriverInterface(const std::string& deviceName);
     CDriverInterface();
 
+    inline BOOL AddDeviceMapping(const GUID& guid, const CJoystickDevice::DeviceMappingVector& mapping)
+    {
+        m_deviceGUIDMapping[guid] = mapping;
+        return TRUE;
+    }
+
     inline BOOL SetDeviceMapping(const DeviceIDMapping& deviceMap)
     {
         m_deviceGUIDMapping = deviceMap;
