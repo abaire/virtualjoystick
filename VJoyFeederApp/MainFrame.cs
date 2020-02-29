@@ -10,10 +10,6 @@ namespace JoystickUsermodeDriver
 {
     public partial class MainFrame : Form
     {
-        public const String REGISTRY_KEY = "SOFTWARE\\BearBrains\\VirtualJoystick\\1.0";
-        private const String ACTIVE_PROFILE_NAME = "ActiveProfileName";
-        private const String DEVICE_NAME = "DeviceName";
-
         UInt32 _driverHandle; //!< Handle to the virtual joystick driver instance
 
         //! List of DeviceDescription instances for available physical devices
@@ -35,146 +31,19 @@ namespace JoystickUsermodeDriver
                 return;
             }
 
-            StoreEnumeratedDevices();
-
-            bool validProfile = true;
-            using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY))
-            {
-                var activeProfile = k.GetValue(ACTIVE_PROFILE_NAME, "").ToString();
-                if (activeProfile.Length == 0)
-                {
-                    validProfile = false;
-                }
-                else
-                {
-                    using (var profile = k.OpenSubKey(activeProfile))
-                    {
-                        if (profile == null)
-                        {
-                            validProfile = false;
-                        }
-                    }
-                }
-            }
+            DeviceRegistry.StoreEnumeratedDevices(this._driverHandle, this.DeviceEnumeration);
+            var activeProfileName = DeviceRegistry.GetActiveProfileName();
 
             // If no joystick is configured, pop the chooser dialog, otherwise just start feeding
-            if (!validProfile)
+            if (activeProfileName == null)
             {
-                this.GenerateDefaultProfile();
+                DeviceRegistry.GenerateDefaultProfile();
                 //DisplayJoystickChooser();
             }
 
             BeginFeedingDriver();
         }
 
-        private bool WriteEnumeratedDeviceMapping(
-            string mappingKeyName,
-            RegistryKey deviceKey,
-            VJoyDriverInterface.DeviceMapping mapping,
-            string mappingName)
-        {
-            mapping.WriteToRegistry(deviceKey, mappingKeyName);
-            using (var mappingKey = deviceKey.CreateSubKey(mappingKeyName))
-            {
-                if (mappingKey == null)
-                {
-                    return false;
-                }
-                mappingKey.SetValue("SourceName", mappingName);
-            }
-
-            return true;
-        }
-
-        private void StoreEnumeratedDevices()
-        {
-            using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY, true))
-            {
-                k.DeleteSubKeyTree("CurrentDevicePrototypes", false);
-                var devicePrototypes = k.CreateSubKey("CurrentDevicePrototypes", true);
-
-                foreach (DeviceDescription d in this.DeviceEnumeration)
-                {
-                    var deviceKey = devicePrototypes.CreateSubKey(d.GUID, true);
-                    deviceKey.SetValue(DEVICE_NAME, d.displayName);
-
-                    var axes = new List<Tuple<string, UInt32>>();
-                    var buttons = new List<Tuple<string, UInt32>>();
-                    var povs = new List<Tuple<string, UInt32>>();
-                    VJoyDriverInterface.DeviceInfoCallback callback = (deviceType, name, objectIndex) =>
-                    {
-                        var data = new Tuple<string, UInt32>(name, objectIndex);
-                        switch (deviceType)
-                        { 
-                            case VJoyDriverInterface.MappingType.axis:
-                                axes.Add(data);
-                                break;
-                            case VJoyDriverInterface.MappingType.button:
-                                buttons.Add(data);
-                                break;
-                            case VJoyDriverInterface.MappingType.pov:
-                                povs.Add(data);
-                                break;
-                        }
-                    };
-
-                    VJoyDriverInterface.GetDeviceInfo(_driverHandle, d.GUID, callback);
-
-                    deviceKey.SetValue("Axes", axes.Count);
-                    deviceKey.SetValue("Buttons", buttons.Count);
-                    deviceKey.SetValue("POVs", povs.Count);
-
-                    // Generate pass-through mappings for ease of hand editing.
-
-
-                    foreach (var item in axes)
-                    {
-                        var mapping = new VJoyDriverInterface.DeviceMapping(
-                            VJoyDriverInterface.MappingType.axis,
-                            item.Item2);
-                        var subkeyName = $"AxisMapping_{item.Item2}";
-                        WriteEnumeratedDeviceMapping(subkeyName, deviceKey, mapping, item.Item1);
-                    }
-
-                    foreach (var item in buttons)
-                    {
-                        var mapping = new VJoyDriverInterface.DeviceMapping(
-                            VJoyDriverInterface.MappingType.button,
-                            item.Item2);
-                        var subkeyName = $"ButtonMapping_{item.Item2}";
-                        WriteEnumeratedDeviceMapping(subkeyName, deviceKey, mapping, item.Item1);
-                    }
-
-                    foreach (var item in povs)
-                    {
-                        var mapping = new VJoyDriverInterface.DeviceMapping(
-                            VJoyDriverInterface.MappingType.pov,
-                            item.Item2);
-                        var subkeyName = $"POVMapping_{item.Item2}";
-                        WriteEnumeratedDeviceMapping(subkeyName, deviceKey, mapping, item.Item1);
-                    }
-                }
-            }
-        }
-
-        private void GenerateDefaultProfile()
-        {
-            using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY, true))
-            {
-                var numProfiles = k.GetSubKeyNames().Length;
-
-                k.SetValue(ACTIVE_PROFILE_NAME, "Profile_0");
-
-                if (numProfiles > 0)
-                {
-                    // TODO: Pop a UI to allow the active profile to be selected.
-                    return;
-                }
-
-                // TODO: Pop a UI to allow joysticks to be enumerated and mapped.
-                var profile = k.CreateSubKey("Profile_0", true);
-            }
-        }
 
         private void MenuClose_Click(object sender, EventArgs e)
         {
@@ -305,83 +174,10 @@ namespace JoystickUsermodeDriver
         {
             if (_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
                 return;
-            VJoyDriverInterface.ClearDeviceMappings(_driverHandle);
-
-            using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY))
-            {
-                var activeProfileName = k.GetValue(ACTIVE_PROFILE_NAME);
-                if (activeProfileName == null)
-                {
-                    MessageBox.Show(
-                        $"{ACTIVE_PROFILE_NAME} not set under {REGISTRY_KEY}. No mappings loaded.",
-                        "Registry Error",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Exclamation);
-                    return;
-                }
-
-                this.LoadMappingsForProfile(k, activeProfileName.ToString());
-            }
+            DeviceRegistry.LoadMappingsIntoDriver(_driverHandle);
         }
 
-        private void LoadMappingsForProfile(RegistryKey parentKey, string activeProfileName)
-        {
-            using (RegistryKey activeProfile = parentKey.OpenSubKey(activeProfileName))
-            {
-                if (activeProfile == null)
-                {
-                    MessageBox.Show(
-                        $"{activeProfileName} does not exist under {REGISTRY_KEY}. No mappings loaded.",
-                        "Registry Error",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Exclamation);
-                    return;
-                }
 
-                foreach (var deviceID in activeProfile.GetSubKeyNames())
-                {
-                    this.LoadMappingsForDevice(activeProfile, deviceID);
-                }
-            }
-        }
-
-        private void LoadMappingsForDevice(RegistryKey profileKey, string deviceID)
-        {
-            using (RegistryKey device = profileKey.OpenSubKey(deviceID))
-            {
-                if (device == null)
-                {
-                    MessageBox.Show(
-                        $"{deviceID} does not exist in profile {profileKey.Name}. Skipping device.",
-                        "Registry Error",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Exclamation);
-                    return;
-                }
-
-                var mappings = new List<VJoyDriverInterface.DeviceMapping>();
-                foreach (var mappingName in device.GetSubKeyNames())
-                {
-                    using (RegistryKey mappingKey = device.OpenSubKey(mappingName))
-                    {
-                        if (mappingKey == null)
-                        {
-                            MessageBox.Show(
-                                $"{mappingName} does not exist in device {deviceID} in profile {profileKey.Name}. Skipping device.",
-                                "Registry Error",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Exclamation);
-                            return;
-                        }
-
-                        var m = new VJoyDriverInterface.DeviceMapping(mappingKey);
-                        mappings.Add(m);
-                    }
-                }
-
-                VJoyDriverInterface.SetDeviceMapping(_driverHandle, deviceID, mappings.ToArray(), mappings.Count);
-            }
-        }
 
 
         private void StopFeedingDriver()
