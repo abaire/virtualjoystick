@@ -1,21 +1,3 @@
-/*++
-
-Copyright (C) Microsoft Corporation, All Rights Reserved
-
-Module Name:
-
-    vhidmini.h
-
-Abstract:
-
-    This module contains the type definitions for the driver
-
-Environment:
-
-    Windows Driver Framework (WDF)
-
---*/
-
 #pragma once
 
 #include <windows.h>
@@ -59,7 +41,7 @@ QueueCreate(
     _Out_ WDFQUEUE* Queue
 );
 
-DRIVER_INITIALIZE                   DriverEntry;
+DRIVER_INITIALIZE DriverEntry;
 
 NTSTATUS
 RequestCopyFromBuffer(

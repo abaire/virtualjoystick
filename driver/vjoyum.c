@@ -136,7 +136,7 @@ Return Value:
     WDF_DRIVER_CONFIG config;
     NTSTATUS status;
 
-    KdPrint(("DriverEntry for VHidMini\n"));
+    KdPrint(("DriverEntry: VJoyUM\n"));
 
     WDF_DRIVER_CONFIG_INIT(&config, EvtDeviceAdd);
 
