@@ -64,10 +64,10 @@ namespace JoystickUsermodeDriver
             if (!validProfile)
             {
                 this.GenerateDefaultProfile();
-                //displayJoystickChooser();
+                //DisplayJoystickChooser();
             }
 
-            beginFeedingDriver();
+            BeginFeedingDriver();
         }
 
         private void StoreEnumeratedDevices()
@@ -220,7 +220,7 @@ namespace JoystickUsermodeDriver
             VJoyDriverInterface.EndDriverUpdateLoop(_driverHandle);
 
             // The joystick chooser will start up the loop again
-            displayJoystickChooser();
+            DisplayJoystickChooser();
         }
 
 
@@ -268,7 +268,7 @@ namespace JoystickUsermodeDriver
             this.joystickDeviceList.Columns[1].Width = -1;
         }
 
-        private void displayJoystickChooser()
+        private void DisplayJoystickChooser()
         {
             // Display the chooser dialog
             if (this.DeviceEnumeration.Count > 0)
@@ -284,7 +284,7 @@ namespace JoystickUsermodeDriver
                     // k.Close();
 
                     // Notify the driver of the update
-                    beginFeedingDriver();
+                    BeginFeedingDriver();
                 }
             }
             else
@@ -296,7 +296,7 @@ namespace JoystickUsermodeDriver
             }
         }
 
-        private void beginFeedingDriver()
+        private void BeginFeedingDriver()
         {
             if (_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
                 return;
@@ -394,7 +394,7 @@ namespace JoystickUsermodeDriver
         }
 
 
-        private void stopFeedingDriver()
+        private void StopFeedingDriver()
         {
             if (_driverHandle == VJoyDriverInterface.INVALID_HANDLE_VALUE)
                 return;
@@ -416,12 +416,16 @@ namespace JoystickUsermodeDriver
         private void reloadActiveProfileToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Cycling the driver will reload the current profile.
-            stopFeedingDriver();
-            beginFeedingDriver();
+            StopFeedingDriver();
+            BeginFeedingDriver();
         }
 
         private void refreshToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            StopFeedingDriver();
+            _deviceEnumeration.Clear();
+            DisplayJoystickGUIDs();
+            BeginFeedingDriver();
         }
     }
 }
