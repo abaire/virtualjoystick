@@ -346,6 +346,7 @@ Return Value:
     switch (IoControlCode)
     {
     case IOCTL_HID_GET_DEVICE_DESCRIPTOR: // METHOD_NEITHER
+        KdPrint(("IOCTL_HID_GET_DEVICE_DESCRIPTOR\n"));
         _Analysis_assume_(deviceContext->HidDescriptor.bLength != 0);
         status = RequestCopyFromBuffer(Request,
                                        &deviceContext->HidDescriptor,
@@ -353,25 +354,28 @@ Return Value:
         break;
 
     case IOCTL_HID_GET_DEVICE_ATTRIBUTES: // METHOD_NEITHER
+        KdPrint(("IOCTL_HID_GET_DEVICE_ATTRIBUTES\n"));
         status = RequestCopyFromBuffer(Request,
                                        &queueContext->DeviceContext->HidDeviceAttributes,
                                        sizeof(HID_DEVICE_ATTRIBUTES));
         break;
 
     case IOCTL_HID_GET_REPORT_DESCRIPTOR: // METHOD_NEITHER
+        KdPrint(("IOCTL_HID_GET_REPORT_DESCRIPTOR\n"));
         status = RequestCopyFromBuffer(Request,
                                        deviceContext->ReportDescriptor,
                                        deviceContext->HidDescriptor.DescriptorList[0].wReportLength);
         break;
 
     case IOCTL_HID_GET_STRING: // METHOD_NEITHER
-
+        KdPrint(("IOCTL_HID_GET_STRING\n"));
         status = GetString(Request);
         break;
 
 
     case IOCTL_HID_READ_REPORT: // METHOD_NEITHER
     case IOCTL_UMDF_HID_GET_INPUT_REPORT:
+        KdPrint(("IOCTL_HID_READ_REPORT IOCTL_UMDF_HID_GET_INPUT_REPORT\n"));
         //
         // Returns a report from the device into a class driver-supplied
         // buffer.
@@ -381,6 +385,7 @@ Return Value:
 
     case IOCTL_HID_WRITE_REPORT: // METHOD_NEITHER
     case IOCTL_UMDF_HID_SET_OUTPUT_REPORT: // METHOD_NEITHER
+        KdPrint(("IOCTL_HID_WRITE_REPORT IOCTL_UMDF_HID_SET_OUTPUT_REPORT\n"));
         //
         // Transmits a class driver-supplied report to the device.
         //
@@ -407,7 +412,7 @@ Return Value:
         //
 
     case IOCTL_HID_GET_INDEXED_STRING: // METHOD_OUT_DIRECT
-
+        KdPrint(("IOCTL_HID_GET_INDEXED_STRING\n"));
         status = GetIndexedString(Request);
         break;
 
