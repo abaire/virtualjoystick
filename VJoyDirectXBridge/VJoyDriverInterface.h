@@ -15,15 +15,14 @@
 #endif
 
 extern "C" {
-typedef void (CALLBACK* DeviceEnumCB)(const char* name, const char* guid);
 
 //! \enum   MappingType
 //! \brief  Defines the type of value to be mapped to the virtual driver
 typedef enum _MappingType
 {
-    DS_AXIS = 0,
-    DS_POV,
-    DS_BUTTON
+    mt_axis = 0,
+    mt_pov,
+    mt_button
 } MappingType;
 
 //! \enum   AxisIndex
@@ -56,6 +55,9 @@ typedef struct _DeviceMapping
     BOOL invert; //!< Whether or not we should logically invert the physical state when injecting the virtual device
 } DeviceMapping;
 
+typedef void (CALLBACK* DeviceEnumCB)(const char* name, const char* guid);
+typedef void (CALLBACK* DeviceInfoCB)(MappingType type, const char* name, UINT32 index);
+
 
 //= P R O T O T Y P E S =======================================================================
 
@@ -76,17 +78,14 @@ BOOL BeginDriverUpdateLoop(HANDLE driver);
 VJOYDRIVERINTERFACE_API
 BOOL EndDriverUpdateLoop(HANDLE driver);
 
+// callbackFunc will be invoked synchronously multiple times for each device.
 // Enumerates physical devices appropriate for mapping to the virtual driver.
 VJOYDRIVERINTERFACE_API
 BOOL EnumerateDevices(HANDLE driver, DeviceEnumCB callbackFunc);
 
+// callbackFunc will be invoked synchronously multiple times for each object in the device.
 VJOYDRIVERINTERFACE_API
-BOOL GetDeviceInfo(
-    HANDLE driver, 
-    _In_ const char* deviceGUID, 
-    _Out_ UINT32* numAxes, 
-    _Out_ UINT32* numButtons,
-    _Out_ UINT32* numPOVs);
+BOOL GetDeviceInfo(HANDLE driver, _In_ const char* deviceGUID, DeviceInfoCB callbackFunc);
 
 VJOYDRIVERINTERFACE_API
 BOOL SetDeviceMapping(HANDLE driver, const char* deviceGUID, const DeviceMapping* mappings, size_t mappingCount);

@@ -46,6 +46,9 @@ public:
     typedef void (CALLBACK* DeviceEnumCB)(const char* name, const char* guid);
     typedef std::map<GUID, CJoystickDevice::DeviceMappingVector, GUIDComparator> DeviceIDMapping;
 
+    typedef std::pair<std::string, UINT32> DeviceObjectInfo;
+    typedef std::vector<DeviceObjectInfo> DeviceObjectInfoVector;
+
 protected:
     typedef std::vector<CJoystickDevice> DeviceVector;
 
@@ -75,9 +78,9 @@ public:
     BOOL EnumerateDevices(DeviceEnumCB cb);
     BOOL GetDeviceInfo(
         const GUID& deviceGUID,
-        UINT32& numAxes,
-        UINT32& numButtons,
-        UINT32& numPOVs);
+        _Out_ DeviceObjectInfoVector& axes,
+        _Out_ DeviceObjectInfoVector& buttons,
+        _Out_ DeviceObjectInfoVector& povs);
 
     BOOL RunUpdateThread(void);
     BOOL ExitUpdateThread(void);

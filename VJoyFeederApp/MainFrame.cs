@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Windows.Forms;
+using Microsoft.DirectX.DirectInput;
 using Microsoft.Win32;
 
 
@@ -66,10 +67,30 @@ namespace JoystickUsermodeDriver
             BeginFeedingDriver();
         }
 
+        private bool WriteEnumeratedDeviceMapping(
+            string mappingKeyName,
+            RegistryKey deviceKey,
+            VJoyDriverInterface.DeviceMapping mapping,
+            string mappingName)
+        {
+            mapping.WriteToRegistry(deviceKey, mappingKeyName);
+            using (var mappingKey = deviceKey.CreateSubKey(mappingKeyName))
+            {
+                if (mappingKey == null)
+                {
+                    return false;
+                }
+                mappingKey.SetValue("SourceName", mappingName);
+            }
+
+            return true;
+        }
+
         private void StoreEnumeratedDevices()
         {
             using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY, true))
             {
+                k.DeleteSubKeyTree("CurrentDevicePrototypes", false);
                 var devicePrototypes = k.CreateSubKey("CurrentDevicePrototypes", true);
 
                 foreach (DeviceDescription d in this.DeviceEnumeration)
@@ -77,44 +98,60 @@ namespace JoystickUsermodeDriver
                     var deviceKey = devicePrototypes.CreateSubKey(d.GUID, true);
                     deviceKey.SetValue(DEVICE_NAME, d.displayName);
 
-                    UInt32 numAxes = 0;
-                    UInt32 numButtons = 0;
-                    UInt32 numPOVs = 0;
-                    VJoyDriverInterface.GetDeviceInfo(
-                        _driverHandle,
-                        d.GUID,
-                        ref numAxes,
-                        ref numButtons,
-                        ref numPOVs);
+                    var axes = new List<Tuple<string, UInt32>>();
+                    var buttons = new List<Tuple<string, UInt32>>();
+                    var povs = new List<Tuple<string, UInt32>>();
+                    VJoyDriverInterface.DeviceInfoCallback callback = (deviceType, name, objectIndex) =>
+                    {
+                        var data = new Tuple<string, UInt32>(name, objectIndex);
+                        switch (deviceType)
+                        { 
+                            case VJoyDriverInterface.MappingType.axis:
+                                axes.Add(data);
+                                break;
+                            case VJoyDriverInterface.MappingType.button:
+                                buttons.Add(data);
+                                break;
+                            case VJoyDriverInterface.MappingType.pov:
+                                povs.Add(data);
+                                break;
+                        }
+                    };
 
-                    deviceKey.SetValue("Axes", numAxes);
-                    deviceKey.SetValue("Buttons", numButtons);
-                    deviceKey.SetValue("POVs", numPOVs);
+                    VJoyDriverInterface.GetDeviceInfo(_driverHandle, d.GUID, callback);
+
+                    deviceKey.SetValue("Axes", axes.Count);
+                    deviceKey.SetValue("Buttons", buttons.Count);
+                    deviceKey.SetValue("POVs", povs.Count);
 
                     // Generate pass-through mappings for ease of hand editing.
-                    var index = 0;
-                    for (UInt32 i = 0; i < numAxes; ++i)
+
+
+                    foreach (var item in axes)
                     {
                         var mapping = new VJoyDriverInterface.DeviceMapping(
                             VJoyDriverInterface.MappingType.axis,
-                            i);
-                        mapping.WriteToRegistry(deviceKey, $"Mapping_{index++}");
+                            item.Item2);
+                        var subkeyName = $"AxisMapping_{item.Item2}";
+                        WriteEnumeratedDeviceMapping(subkeyName, deviceKey, mapping, item.Item1);
                     }
 
-                    for (UInt32 i = 0; i < numButtons; ++i)
+                    foreach (var item in buttons)
                     {
                         var mapping = new VJoyDriverInterface.DeviceMapping(
                             VJoyDriverInterface.MappingType.button,
-                            i);
-                        mapping.WriteToRegistry(deviceKey, $"Mapping_{index++}");
+                            item.Item2);
+                        var subkeyName = $"ButtonMapping_{item.Item2}";
+                        WriteEnumeratedDeviceMapping(subkeyName, deviceKey, mapping, item.Item1);
                     }
 
-                    for (UInt32 i = 0; i < numPOVs; ++i)
+                    foreach (var item in povs)
                     {
                         var mapping = new VJoyDriverInterface.DeviceMapping(
                             VJoyDriverInterface.MappingType.pov,
-                            i);
-                        mapping.WriteToRegistry(deviceKey, $"Mapping_{index++}");
+                            item.Item2);
+                        var subkeyName = $"POVMapping_{item.Item2}";
+                        WriteEnumeratedDeviceMapping(subkeyName, deviceKey, mapping, item.Item1);
                     }
                 }
             }

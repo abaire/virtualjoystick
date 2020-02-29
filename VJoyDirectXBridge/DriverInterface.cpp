@@ -212,10 +212,14 @@ BOOL CDriverInterface::EnumerateDevices(DeviceEnumCB cb)
 
 BOOL CDriverInterface::GetDeviceInfo(
     const GUID& deviceGUID,
-    UINT32& numAxes,
-    UINT32& numButtons,
-    UINT32& numPOVs)
+    DeviceObjectInfoVector& axes,
+    DeviceObjectInfoVector& buttons,
+    DeviceObjectInfoVector& povs)
 {
+    axes.clear();
+    buttons.clear();
+    povs.clear();
+
     BOOL releaseAfterOp = FALSE;
     BOOL ret = TRUE;
     if (!m_pDI)
@@ -239,9 +243,35 @@ BOOL CDriverInterface::GetDeviceInfo(
         goto cleanup;
     }
 
-    numAxes = capabilities.dwAxes;
-    numButtons = capabilities.dwButtons;
-    numPOVs = capabilities.dwPOVs;
+    auto numAxes = capabilities.dwAxes;
+    auto numButtons = capabilities.dwButtons;
+    auto numPOVs = capabilities.dwPOVs;
+
+    auto callback = [](const DIDEVICEOBJECTINSTANCE* inst, VOID* pContext)
+    {
+        DeviceObjectInfoVector* info = static_cast<DeviceObjectInfoVector*>(pContext);
+        UINT32 instance = DIDFT_GETINSTANCE(inst->dwType);
+        info->push_back(DeviceObjectInfo(inst->tszName, instance));
+        return DIENUM_CONTINUE;
+    };
+
+    if (numAxes && FAILED(device->EnumObjects(callback, &axes, DIDFT_AXIS)))
+    {
+        ret = FALSE;
+        goto cleanup;
+    }
+
+    if (numButtons && FAILED(device->EnumObjects(callback, &buttons, DIDFT_BUTTON)))
+    {
+        ret = FALSE;
+        goto cleanup;
+    }
+
+    if (numPOVs && FAILED(device->EnumObjects(callback, &povs, DIDFT_POV)))
+    {
+        ret = FALSE;
+        goto cleanup;
+    }
 
 cleanup:
     if (releaseAfterOp)

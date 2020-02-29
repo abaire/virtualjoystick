@@ -174,7 +174,7 @@ inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(DEVICE_PACKET& packet)
     {
         switch (it->destBlock)
         {
-        case DS_AXIS:
+        case mt_axis:
             {
                 // JOYSTATEAXISOFFSETS holds the byte offset from the start of the joystate struct
                 // to the various axis IDs.
@@ -190,19 +190,19 @@ inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(DEVICE_PACKET& packet)
             }
             break;
 
-        case DS_POV:
+        case mt_pov:
             report.POV = MAP_RANGE(m_state.rgdwPOV[it->srcIndex]);
             break;
 
-        case DS_BUTTON:
+        case mt_button:
             {
                 switch (it->srcBlock)
                 {
-                case DS_BUTTON:
+                case mt_button:
                     SETBUTTON(it->destIndex, (m_state.rgbButtons[it->srcIndex] == 0x80));
                     break;
 
-                case DS_POV:
+                case mt_pov:
                     {
                         BOOL buttonSet[4] = {FALSE,FALSE,FALSE,FALSE};
 

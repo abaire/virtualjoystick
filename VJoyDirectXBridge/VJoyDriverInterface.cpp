@@ -123,12 +123,7 @@ BOOL EnumerateDevices(HANDLE attachID, DeviceEnumCB callbackFunc)
 
 extern "C"
 VJOYDRIVERINTERFACE_API
-BOOL GetDeviceInfo(
-    HANDLE attachID,
-    _In_ const char* deviceGUIDStr,
-    _Out_ UINT32* numAxes,
-    _Out_ UINT32* numButtons,
-    _Out_ UINT32* numPOVs)
+BOOL GetDeviceInfo(HANDLE attachID, _In_ const char* deviceGUIDStr, DeviceInfoCB callbackFunc)
 {
     HandleMap::iterator it = g_driverHandles.find(attachID);
     if (it == g_driverHandles.end())
@@ -136,7 +131,32 @@ BOOL GetDeviceInfo(
 
     GUID deviceGUID;
     ParseGUID(deviceGUID, deviceGUIDStr);
-    return it->second.GetDeviceInfo(deviceGUID, *numAxes, *numButtons, *numPOVs);
+
+    CDriverInterface::DeviceObjectInfoVector axes;
+    CDriverInterface::DeviceObjectInfoVector buttons;
+    CDriverInterface::DeviceObjectInfoVector povs;
+
+    if (!it->second.GetDeviceInfo(deviceGUID, axes, buttons, povs))
+    {
+        return FALSE;
+    }
+
+    for each (auto info in axes)
+    {
+        callbackFunc(mt_axis, info.first.c_str(), info.second);
+    }
+
+    for each (auto info in buttons)
+    {
+        callbackFunc(mt_button, info.first.c_str(), info.second);
+    }
+
+    for each (auto info in povs)
+    {
+        callbackFunc(mt_pov, info.first.c_str(), info.second);
+    }
+
+    return TRUE;
 }
 
 extern "C"
