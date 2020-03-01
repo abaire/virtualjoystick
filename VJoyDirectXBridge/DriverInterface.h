@@ -55,7 +55,12 @@ protected:
 public:
 
     CDriverInterface(const std::string& deviceName);
+    CDriverInterface(CDriverInterface&&) noexcept;
     CDriverInterface();
+
+    ~CDriverInterface();
+
+    CDriverInterface& operator=(CDriverInterface&&);
 
     inline BOOL AddDeviceMapping(const GUID& guid, const CJoystickDevice::DeviceMappingVector& mapping)
     {
@@ -85,15 +90,25 @@ public:
     BOOL RunUpdateThread(void);
     BOOL ExitUpdateThread(void);
 
-    HANDLE& DriverHandle(void) { return m_driverHandle; }
-    const HANDLE& DriverHandle(void) const { return m_driverHandle; }
+    inline HANDLE& DriverHandle(void) { return m_driverHandle; }
+    inline const HANDLE& DriverHandle(void) const { return m_driverHandle; }
 
     void CloseDriverHandle(void);
-
+    void CloseInterruptEvent(void);
 
 protected:
 
     DWORD UpdateThreadProc(void);
+
+    void RunPollingLoop(void);
+#if 0
+    void RunInterruptLoop(void);
+#endif
+
+    BOOL AcquireDevices(void);
+    void ReleaseDevices(void);
+
+    BOOL SetNotificationOnDevices(HANDLE eventHandle);
 
     static DWORD WINAPI UpdateThreadProc(LPVOID driverInterface)
     {
@@ -121,6 +136,8 @@ protected:
     HANDLE m_updateThreadHandle;
 
     volatile BOOL m_updateThreadRunning;
+
+    HANDLE m_interruptEvent;
 
     DWORD m_updateLoopDelay;
 

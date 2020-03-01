@@ -35,7 +35,6 @@ static BOOL CALLBACK EnumJoysticksForFrontend(const DIDEVICEINSTANCE* inst, VOID
 
 CDriverInterface::CDriverInterface(const std::string& deviceName) :
     m_deviceName(deviceName)
-    , m_driverHandle(INVALID_HANDLE_VALUE)
     , m_updateThreadHandle(INVALID_HANDLE_VALUE)
     , m_updateThreadRunning(FALSE)
     , m_updateLoopDelay(DEFAULT_LOOP_DELAY)
@@ -47,6 +46,18 @@ CDriverInterface::CDriverInterface(const std::string& deviceName) :
                                 OPEN_EXISTING,
                                 0,
                                 NULL);
+
+    m_interruptEvent = CreateEvent(
+        NULL, // default security attributes
+        FALSE,
+        FALSE,
+        "deviceDataReady"
+    );
+}
+
+CDriverInterface::CDriverInterface(CDriverInterface&& o) noexcept
+{
+    *this = std::move(o);
 }
 
 CDriverInterface::CDriverInterface() :
@@ -54,7 +65,36 @@ CDriverInterface::CDriverInterface() :
     , m_updateThreadHandle(INVALID_HANDLE_VALUE)
     , m_updateThreadRunning(FALSE)
     , m_updateLoopDelay(DEFAULT_LOOP_DELAY)
+    , m_interruptEvent(INVALID_HANDLE_VALUE)
 {
+}
+
+CDriverInterface::~CDriverInterface()
+{
+    CloseInterruptEvent();
+    CloseDriverHandle();
+}
+
+CDriverInterface& CDriverInterface::operator=(CDriverInterface&& o)
+{
+    if (&o == this) { return *this; }
+
+    ExitUpdateThread();
+    CloseInterruptEvent();
+    CloseDriverHandle();
+
+    m_deviceName = std::move(o.m_deviceName);
+    m_driverHandle = std::exchange(o.m_driverHandle, INVALID_HANDLE_VALUE);
+    m_updateThreadHandle = std::exchange(o.m_updateThreadHandle, INVALID_HANDLE_VALUE);
+    m_updateThreadRunning = std::move(o.m_updateThreadRunning);
+    m_interruptEvent = std::exchange(o.m_interruptEvent, INVALID_HANDLE_VALUE);
+    m_updateLoopDelay = std::move(o.m_updateLoopDelay);
+    m_pDI = std::move(o.m_pDI);
+    o.m_pDI = NULL;
+    m_inputDeviceVector = std::move(o.m_inputDeviceVector);
+    m_deviceGUIDMapping = std::move(o.m_deviceGUIDMapping);
+
+    return *this;
 }
 
 BOOL CDriverInterface::RunUpdateThread(void)
@@ -74,14 +114,13 @@ BOOL CDriverInterface::ExitUpdateThread(void)
     if (m_driverHandle == INVALID_HANDLE_VALUE)
         return FALSE;
 
-
     // Stop the thread if necessary
     if (m_updateThreadHandle != INVALID_HANDLE_VALUE)
     {
         m_updateThreadRunning = FALSE;
+        SetEvent(m_interruptEvent);
         WaitForSingleObject(m_updateThreadHandle, INFINITE);
         CloseHandle(m_updateThreadHandle);
-
         m_updateThreadHandle = INVALID_HANDLE_VALUE;
     }
 
@@ -97,6 +136,14 @@ void CDriverInterface::CloseDriverHandle(void)
     m_driverHandle = INVALID_HANDLE_VALUE;
 }
 
+void CDriverInterface::CloseInterruptEvent(void)
+{
+    if (m_interruptEvent == INVALID_HANDLE_VALUE)
+        return;
+
+    CloseHandle(m_interruptEvent);
+    m_interruptEvent = INVALID_HANDLE_VALUE;
+}
 
 BOOL CDriverInterface::OpenDirectXHandle(void)
 {
@@ -107,6 +154,44 @@ BOOL CDriverInterface::OpenDirectXHandle(void)
         NULL)))
         return FALSE;
 
+    return TRUE;
+}
+
+BOOL CDriverInterface::AcquireDevices(void)
+{
+    DeviceVector::iterator it = m_inputDeviceVector.begin();
+    DeviceVector::iterator itEnd = m_inputDeviceVector.end();
+    for (; it != itEnd; ++it)
+    {
+        if (!it->Acquire())
+        {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+void CDriverInterface::ReleaseDevices()
+{
+    DeviceVector::iterator it = m_inputDeviceVector.begin();
+    DeviceVector::iterator itEnd = m_inputDeviceVector.end();
+    for (; it != itEnd; ++it)
+    {
+        it->Release();
+    }
+}
+
+BOOL CDriverInterface::SetNotificationOnDevices(HANDLE eventHandle)
+{
+    DeviceVector::iterator it = m_inputDeviceVector.begin();
+    DeviceVector::iterator itEnd = m_inputDeviceVector.end();
+    for (; it != itEnd; ++it)
+    {
+        if (!it->SetEventNotification(eventHandle))
+        {
+            return FALSE;
+        }
+    }
     return TRUE;
 }
 
@@ -121,15 +206,40 @@ DWORD CDriverInterface::UpdateThreadProc(void)
         return 0;
     }
 
+    BOOL usePolling = FALSE;
     DeviceVector::iterator it = m_inputDeviceVector.begin();
     DeviceVector::iterator itEnd = m_inputDeviceVector.end();
     for (; it != itEnd; ++it)
     {
-        if (!it->Acquire())
+        if (it->IsPolled())
         {
-            SAFE_RELEASE(m_pDI);
-            return 0;
+            usePolling = TRUE;
         }
+    }
+
+#if 0
+    if (usePolling)
+    {
+        RunPollingLoop();
+    }
+    else
+    {
+        RunInterruptLoop();
+    }
+#else
+    RunPollingLoop();
+#endif
+
+    SAFE_RELEASE(m_pDI);
+
+    return 0;
+}
+
+void CDriverInterface::RunPollingLoop(void)
+{
+    if (!AcquireDevices())
+    {
+        return;
     }
 
     UINT32 numFailures = 0;
@@ -143,9 +253,97 @@ DWORD CDriverInterface::UpdateThreadProc(void)
         // Invalidate the POV axis
         packet.report.POV = -1;
 
+        DeviceVector::iterator it = m_inputDeviceVector.begin();
+        DeviceVector::iterator itEnd = m_inputDeviceVector.end();
+        for (; it != itEnd; ++it)
+            it->GetVirtualStateUpdatePacket(packet);
+
+        DWORD bytesWritten;
+        if (!WriteFile(m_driverHandle,
+                       &packet,
+                       sizeof(packet),
+                       &bytesWritten,
+                       NULL))
+        {
+#if _DEBUG
+            TCHAR buffer[1024];
+            sprintf_s(buffer,
+                      1024,
+                      "Failed to write output report to the driver: failure #%lu, error %d\n",
+                      numFailures,
+                      GetLastError());
+            OutputDebugString(buffer);
+#endif
+
+            if (++numFailures > MAX_CONSECUTIVE_HID_COMMUNICATION_FAILURES)
+                break;
+        }
+        else
+            numFailures = 0;
+
+        Sleep(m_updateLoopDelay);
+    }
+
+    ReleaseDevices();
+}
+
+#if 0
+void CDriverInterface::RunInterruptLoop(void)
+{
+    UINT32 numFailures = 0;
+
+    DEVICE_PACKET packet;
+    memset(&packet, 0, sizeof(packet));
+    packet.id = REPORTID_VENDOR;
+
+    if (!SetNotificationOnDevices(m_interruptEvent))
+    {
+#if _DEBUG
+        OutputDebugString("Failed to set interrupt event on devices.");
+#endif
+        return;
+    }
+
+    if (!AcquireDevices())
+    {
+#if _DEBUG
+        OutputDebugString("Failed to acquire devices.");
+#endif
+        return;
+    }
+
+    while (m_updateThreadRunning)
+    {
+        auto result = WaitForSingleObject(m_interruptEvent, 5000);
+        switch (result)
+        {
+        case WAIT_OBJECT_0:
+            break;
+
+        case WAIT_ABANDONED:
+        case WAIT_TIMEOUT:
+            continue;
+
+        case WAIT_FAILED:
+            {
+#if _DEBUG
+                TCHAR buffer[1024];
+                sprintf_s(buffer,
+                          1024,
+                          "Failed to wait on interrupt event:error %d\n",
+                          GetLastError());
+                OutputDebugString(buffer);
+#endif
+            }
+            continue;
+        }
+
+        // Invalidate the POV axis
+        packet.report.POV = -1;
+
         // Fetch data from our devices into the report packet
-        it = m_inputDeviceVector.begin();
-        itEnd = m_inputDeviceVector.end();
+        DeviceVector::iterator it = m_inputDeviceVector.begin();
+        DeviceVector::iterator itEnd = m_inputDeviceVector.end();
         for (; it != itEnd; ++it)
             it->GetVirtualStateUpdatePacket(packet);
 
@@ -157,6 +355,7 @@ DWORD CDriverInterface::UpdateThreadProc(void)
                        &bytesWritten,
                        NULL))
         {
+#if _DEBUG
             TCHAR buffer[1024];
             sprintf_s(buffer,
                       1024,
@@ -164,30 +363,19 @@ DWORD CDriverInterface::UpdateThreadProc(void)
                       numFailures,
                       GetLastError());
             OutputDebugString(buffer);
+#endif
 
             if (++numFailures > MAX_CONSECUTIVE_HID_COMMUNICATION_FAILURES)
                 break;
         }
         else
             numFailures = 0;
-
-
-        Sleep(m_updateLoopDelay);
     }
 
-    // Kill DirectInput 
-    it = m_inputDeviceVector.begin();
-    itEnd = m_inputDeviceVector.end();
-    for (; it != itEnd; ++it)
-        it->Release();
-
-    m_inputDeviceVector.clear();
-
-    SAFE_RELEASE(m_pDI);
-
-    return 0;
+    ReleaseDevices();
+    SetNotificationOnDevices(NULL);
 }
-
+#endif
 
 BOOL CDriverInterface::EnumerateDevices(DeviceEnumCB cb)
 {

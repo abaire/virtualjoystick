@@ -56,17 +56,18 @@ HANDLE AttachToVirtualJoystickDriver(void)
     delete[] joystickNameBuffer;
 
     // Create a driver connection struct
-    CDriverInterface handle(deviceName);
+    CDriverInterface driverInterface(deviceName);
 
     // Ensure that we don't already have a mapping for this handle
-    if (g_driverHandles.find(handle.DriverHandle()) != g_driverHandles.end())
+    if (g_driverHandles.find(driverInterface.DriverHandle()) != g_driverHandles.end())
     {
-        CloseHandle(handle.DriverHandle());
+        CloseHandle(driverInterface.DriverHandle());
         return INVALID_HANDLE_VALUE;
     }
 
-    g_driverHandles[handle.DriverHandle()] = handle;
-    return handle.DriverHandle();
+    auto driverHandle = driverInterface.DriverHandle();
+    g_driverHandles[driverHandle] = std::move(driverInterface);
+    return driverHandle;
 }
 
 

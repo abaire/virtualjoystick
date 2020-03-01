@@ -32,8 +32,17 @@ public:
 
     inline void Release(void)
     {
-        if (m_handle) m_handle->Release();
-        m_handle = NULL;
+        if (m_inputDevice) m_inputDevice->Release();
+        m_inputDevice = NULL;
+    }
+
+    inline BOOL SetEventNotification(HANDLE h)
+    {
+        if (m_inputDevice) {
+            auto ret = m_inputDevice->SetEventNotification(h);
+            return ret == DI_OK;
+        }
+        return FALSE;
     }
 
     //! \brief Polls the current physical device states and formats a HID DEVICE_PACKET message
@@ -44,6 +53,8 @@ public:
     //!           or inconsistent state!
     inline BOOL GetVirtualStateUpdatePacket(DEVICE_PACKET& packet);
 
+
+    inline BOOL IsPolled() const { return m_isPolled;  }
 
 protected:
 
@@ -57,18 +68,18 @@ protected:
     //! \brief Polls for the current state of the physical device wrapped by this instance.
     inline BOOL PollPhysicalStick(void)
     {
-        HRESULT hr = m_handle->Poll();
+        HRESULT hr = m_inputDevice->Poll();
         if (FAILED(hr))
         {
             UINT numRetries = 0;
 
-            hr = m_handle->Acquire();
+            hr = m_inputDevice->Acquire();
             while (hr == DIERR_INPUTLOST && numRetries++ < MAX_ACQUIRE_RETRIES)
-                hr = m_handle->Acquire();
+                hr = m_inputDevice->Acquire();
             return FALSE;
         }
 
-        hr = m_handle->GetDeviceState(sizeof(m_state), &m_state);
+        hr = m_inputDevice->GetDeviceState(sizeof(m_state), &m_state);
         if (FAILED(hr))
         {
             //printf( "ERROR checking dev state for joystick\n" );
@@ -81,7 +92,8 @@ protected:
 
 protected:
     DIDEVICEINSTANCE m_deviceInstance; //!< Information about the physical device being wrapped by this instance
-    LPDIRECTINPUTDEVICE8 m_handle; //!< dinput handle to the physical device being wrapped by this instance
+    LPDIRECTINPUTDEVICE8 m_inputDevice; //!< dinput handle to the physical device being wrapped by this instance
+    BOOL m_isPolled;  //!< TRUE if the device must be polled rather than interrupt driven.
 
     DIJOYSTATE2 m_state; //!< The current state of the physical joystick represented by this instance
 

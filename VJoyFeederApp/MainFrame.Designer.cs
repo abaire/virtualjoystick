@@ -175,6 +175,7 @@ namespace JoystickUsermodeDriver
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.Text = "Virtual Joystick Driver";
+            this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainFrame_FormClosed);
             this.contextMenuStrip.ResumeLayout(false);
             this.menuStrip1.ResumeLayout(false);

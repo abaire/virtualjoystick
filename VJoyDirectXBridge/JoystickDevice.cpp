@@ -25,8 +25,17 @@ CJoystickDevice::CJoystickDevice(
     , m_deviceMapping(deviceMapping)
     , m_state()
 {
-    HRESULT hr = di->CreateDevice(m_deviceInstance.guidInstance, &m_handle, NULL);
+    HRESULT hr = di->CreateDevice(m_deviceInstance.guidInstance, &m_inputDevice, NULL);
 
+    if (m_inputDevice)
+    {
+        DIDEVCAPS caps;
+        caps.dwSize = sizeof(caps);
+        if (!FAILED(m_inputDevice->GetCapabilities(&caps)))
+        {
+            m_isPolled = (caps.dwFlags & DIDC_POLLEDDATAFORMAT) != 0;
+        }
+    }
 
     // Create the joystate offset maps
     {
@@ -48,26 +57,18 @@ CJoystickDevice::CJoystickDevice(
 //-------------------------------------------------------------------------------------------
 BOOL CJoystickDevice::Acquire(void)
 {
-    if (!m_handle || FAILED(m_handle->SetDataFormat( &c_dfDIJoystick2 )))
+    if (!m_inputDevice || FAILED(m_inputDevice->SetDataFormat( &c_dfDIJoystick2 )))
     {
         //PRINTMSG(( "Failed to set stick data format!\n" ));
         return FALSE;
     }
 
-    /*
-    if( FAILED( stick->SetCooperativeLevel( GetConsoleWindow(), DISCL_EXCLUSIVE | DISCL_BACKGROUND ) ) )
-    {
-      printf( "Failed to set stick coop level!\n" );
-      return;
-    }
-  */
-
     // Enumerate the joystick objects and set the min/max values property for any discovered axes.
-    if (FAILED(m_handle->EnumObjects( EnumObjectsCallback,
+    if (FAILED(m_inputDevice->EnumObjects(
+        EnumObjectsCallback,
         (VOID*)this,
         DIDFT_ALL )))
     {
-        //PRINTMSG(( "Failed to enum stick objects!" ));
         return FALSE;
     }
 
@@ -93,9 +94,9 @@ BOOL CJoystickDevice::EnumObjectsCallback(const DIDEVICEOBJECTINSTANCE* obj)
 
         // Set the range for the axis
         HRESULT hr;
-        if (FAILED(hr = m_handle->SetProperty( DIPROP_RANGE, &diprg.diph )))
+        if (FAILED(hr = m_inputDevice->SetProperty( DIPROP_RANGE, &diprg.diph )))
         {
-            //hr = m_handle->GetProperty( DIPROP_RANGE, &diprg.diph );
+            //hr = m_inputDevice->GetProperty( DIPROP_RANGE, &diprg.diph );
             //PRINTMSG(( T_ERROR, "Failed to set range property on joystick axis!\n" ));
             return DIENUM_STOP;
         }
