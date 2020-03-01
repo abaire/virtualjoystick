@@ -31,7 +31,6 @@ namespace JoystickUsermodeDriver
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.ColumnHeader feature;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainFrame));
             this.systemTrayIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -41,19 +40,12 @@ namespace JoystickUsermodeDriver
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.refreshToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.reloadActiveProfileToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.activeProfileDisplay = new System.Windows.Forms.ListView();
-            this.targetFeature = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.profileList = new System.Windows.Forms.ListBox();
             this.label1 = new System.Windows.Forms.Label();
-            feature = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this._profileEditor = new JoystickUsermodeDriver.ProfileEditorPanel();
             this.contextMenuStrip.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // feature
-            // 
-            feature.Text = "Feature";
-            feature.Width = 240;
             // 
             // systemTrayIcon
             // 
@@ -118,29 +110,6 @@ namespace JoystickUsermodeDriver
             this.reloadActiveProfileToolStripMenuItem1.Text = "Reload Active Profile";
             this.reloadActiveProfileToolStripMenuItem1.Click += new System.EventHandler(this.reloadActiveProfileToolStripMenuItem_Click);
             // 
-            // activeProfileDisplay
-            // 
-            this.activeProfileDisplay.AllowColumnReorder = true;
-            this.activeProfileDisplay.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            feature,
-            this.targetFeature});
-            this.activeProfileDisplay.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
-            this.activeProfileDisplay.HideSelection = false;
-            this.activeProfileDisplay.Location = new System.Drawing.Point(246, 27);
-            this.activeProfileDisplay.MultiSelect = false;
-            this.activeProfileDisplay.Name = "activeProfileDisplay";
-            this.activeProfileDisplay.Size = new System.Drawing.Size(551, 304);
-            this.activeProfileDisplay.Sorting = System.Windows.Forms.SortOrder.Descending;
-            this.activeProfileDisplay.TabIndex = 35;
-            this.activeProfileDisplay.UseCompatibleStateImageBehavior = false;
-            this.activeProfileDisplay.View = System.Windows.Forms.View.Details;
-            this.activeProfileDisplay.ItemSelectionChanged += new System.Windows.Forms.ListViewItemSelectionChangedEventHandler(this.joystickDeviceList_ItemSelectionChanged);
-            // 
-            // targetFeature
-            // 
-            this.targetFeature.Text = "Target Feature";
-            this.targetFeature.Width = 305;
-            // 
             // profileList
             // 
             this.profileList.FormattingEnabled = true;
@@ -159,15 +128,31 @@ namespace JoystickUsermodeDriver
             this.label1.TabIndex = 37;
             this.label1.Text = "Profile";
             // 
+            // _profileEditor
+            // 
+            this._profileEditor.AutoScroll = true;
+            this._profileEditor.BackColor = System.Drawing.SystemColors.Window;
+            this._profileEditor.ColumnCount = 3;
+            this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 21F));
+            this._profileEditor.Location = new System.Drawing.Point(260, 39);
+            this._profileEditor.Name = "_profileEditor";
+            this._profileEditor.RowCount = 2;
+            this._profileEditor.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this._profileEditor.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this._profileEditor.Size = new System.Drawing.Size(537, 293);
+            this._profileEditor.TabIndex = 38;
+            // 
             // MainFrame
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(809, 348);
             this.ControlBox = false;
+            this.Controls.Add(this._profileEditor);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.profileList);
-            this.Controls.Add(this.activeProfileDisplay);
             this.Controls.Add(this.menuStrip1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MainMenuStrip = this.menuStrip1;
@@ -175,7 +160,6 @@ namespace JoystickUsermodeDriver
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.Text = "Virtual Joystick Driver";
-            this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainFrame_FormClosed);
             this.contextMenuStrip.ResumeLayout(false);
             this.menuStrip1.ResumeLayout(false);
@@ -191,13 +175,12 @@ namespace JoystickUsermodeDriver
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem MenuShow;
         private System.Windows.Forms.ToolStripMenuItem MenuClose;
-        private System.Windows.Forms.ListView activeProfileDisplay;
         private ToolStripMenuItem reloadActiveProfileToolStripMenuItem;
         private ToolStripMenuItem refreshToolStripMenuItem;
         private ToolStripMenuItem reloadActiveProfileToolStripMenuItem1;
-        private ColumnHeader targetFeature;
         private ListBox profileList;
         private Label label1;
+        private ProfileEditorPanel _profileEditor;
     }
 }
 

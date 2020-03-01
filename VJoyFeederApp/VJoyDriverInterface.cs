@@ -4,9 +4,12 @@ using System.Runtime.InteropServices;
 
 namespace JoystickUsermodeDriver
 {
-    class VJoyDriverInterface
+    public class VJoyDriverInterface
     {
         // Keep in sync with VJoyDriverInterface.h
+
+        public const int MaxVirtualButtons = 128;
+        public const int MaxVirtualPOVs = 1;
 
         public enum MappingType
         {

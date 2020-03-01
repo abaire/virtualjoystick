@@ -119,34 +119,9 @@ namespace JoystickUsermodeDriver
 
         private void PopulateProfileDisplay()
         {
-            this.activeProfileDisplay.Items.Clear();
             string selectedProfile = profileList.SelectedItem.ToString();
             var profile = DeviceRegistry.LoadMappings(selectedProfile);
-
-            foreach (var deviceMapping in profile)
-            {
-                var deviceID = deviceMapping.Key;
-                var mappings = deviceMapping.Value;
-
-                var deviceName = GetDeviceName(deviceID);
-                if (deviceName == null)
-                {
-                    deviceName = deviceID;
-                }
-
-                var deviceGroup = new ListViewGroup(deviceName);
-                activeProfileDisplay.Groups.Add(deviceGroup);
-
-
-                foreach (var mapping in mappings)
-                {
-                    var item = new ListViewItem(mapping.SourceName);
-                    item.Group = deviceGroup;
-
-                    item.SubItems.Add(mapping.VirtualDeviceName);
-                    activeProfileDisplay.Items.Add(item);
-                }
-            }
+            _profileEditor.SetProfile(profile, DeviceEnumeration);
         }
 
         private void BeginFeedingDriver()
@@ -180,7 +155,6 @@ namespace JoystickUsermodeDriver
                 VJoyDriverInterface.SetDeviceMapping(_driverHandle, deviceID, mappings.ToArray(), mappings.Count);
             }
         }
-
 
         private void StopFeedingDriver()
         {

@@ -77,6 +77,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ProfileEditorPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ProfileEditorPanel.Designer.cs">
+      <DependentUpon>ProfileEditorPanel.cs</DependentUpon>
+    </Compile>
     <Compile Include="DeviceDescription.cs" />
     <Compile Include="DevicePicker.cs">
       <SubType>Form</SubType>
