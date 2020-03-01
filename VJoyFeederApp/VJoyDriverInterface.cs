@@ -41,6 +41,57 @@ namespace JoystickUsermodeDriver
 
             private Int32 _invert;
 
+            public MappingType VirtualDeviceType => _virtualDeviceType;
+
+            public UInt32 VirtualDeviceIndex => _virtualDeviceIndex;
+
+            public string VirtualDeviceName
+            {
+                get
+                {
+                    if (_virtualDeviceType == MappingType.axis)
+                    {
+                        return VirtualDeviceIndexName;
+                    }
+
+                    return $"{VirtualDeviceType} {VirtualDeviceIndexName}";
+                }
+            }
+
+            public string VirtualDeviceIndexName => IndexName(_virtualDeviceType, _virtualDeviceIndex);
+
+            public MappingType SourceType => _sourceType;
+
+            public string SourceName
+            {
+                get
+                {
+                    if (_sourceType == MappingType.axis)
+                    {
+                        return SourceIndexName;
+                    }
+
+                    return $"{VirtualDeviceType} {VirtualDeviceIndexName}";
+                }
+            }
+
+            public string SourceIndexName => IndexName(_sourceType, _sourceIndex);
+
+            public UInt32 SourceIndex => _sourceIndex;
+
+            public bool Invert => _invert != 0;
+
+            private string IndexName(MappingType type, UInt32 index)
+            {
+                if (type == MappingType.axis)
+                {
+                    AxisIndex axisIndex = (AxisIndex)index;
+                    return axisIndex.ToString();
+                }
+
+                return index.ToString();
+            }
+
             public DeviceMapping(
                 MappingType virtualDeviceType,
                 UInt32 virtualDeviceIndex,

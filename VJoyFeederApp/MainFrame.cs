@@ -104,23 +104,49 @@ namespace JoystickUsermodeDriver
             }
         }
 
+        private string GetDeviceName(string deviceID)
+        {
+            foreach (var device in DeviceEnumeration)
+            {
+                if (device.GUID == deviceID)
+                {
+                    return device.displayName;
+                }
+            }
+
+            return null;
+        }
+
         private void PopulateProfileDisplay()
         {
             this.activeProfileDisplay.Items.Clear();
+            string selectedProfile = profileList.SelectedItem.ToString();
+            var profile = DeviceRegistry.LoadMappings(selectedProfile);
 
-            foreach (DeviceDescription d in this.DeviceEnumeration)
+            foreach (var deviceMapping in profile)
             {
-                String[] data = new string[2];
-                data[0] = d.displayName;
-                data[1] = d.GUID;
-                var item = new ListViewItem(data);
-                item.SubItems.Add("Test Item");
-                this.activeProfileDisplay.Items.Add(item);
-            }
+                var deviceID = deviceMapping.Key;
+                var mappings = deviceMapping.Value;
 
-            this.activeProfileDisplay.Columns[0].Width = -1;
-            this.activeProfileDisplay.Columns[1].Width = -1;
-            this.activeProfileDisplay.Columns[2].Width = -1;
+                var deviceName = GetDeviceName(deviceID);
+                if (deviceName == null)
+                {
+                    deviceName = deviceID;
+                }
+
+                var deviceGroup = new ListViewGroup(deviceName);
+                activeProfileDisplay.Groups.Add(deviceGroup);
+
+
+                foreach (var mapping in mappings)
+                {
+                    var item = new ListViewItem(mapping.SourceName);
+                    item.Group = deviceGroup;
+
+                    item.SubItems.Add(mapping.VirtualDeviceName);
+                    activeProfileDisplay.Items.Add(item);
+                }
+            }
         }
 
         private void BeginFeedingDriver()
@@ -174,13 +200,6 @@ namespace JoystickUsermodeDriver
 
         private void joystickDeviceList_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e)
         {
-            var builder = new StringBuilder();
-            foreach (ListViewItem item in this.activeProfileDisplay.SelectedItems)
-                builder.AppendLine(item.SubItems[1].Text);
-            if (builder.Length > 0)
-            {
-                Clipboard.SetText(builder.ToString());
-            }
         }
 
         private void reloadActiveProfileToolStripMenuItem_Click(object sender, EventArgs e)

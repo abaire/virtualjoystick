@@ -31,7 +31,6 @@ namespace JoystickUsermodeDriver
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.ColumnHeader Device;
             System.Windows.Forms.ColumnHeader feature;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainFrame));
             this.systemTrayIcon = new System.Windows.Forms.NotifyIcon(this.components);
@@ -46,21 +45,15 @@ namespace JoystickUsermodeDriver
             this.targetFeature = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.profileList = new System.Windows.Forms.ListBox();
             this.label1 = new System.Windows.Forms.Label();
-            Device = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             feature = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.contextMenuStrip.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
-            // Device
-            // 
-            Device.Text = "Device";
-            Device.Width = 162;
-            // 
             // feature
             // 
             feature.Text = "Feature";
-            feature.Width = 160;
+            feature.Width = 240;
             // 
             // systemTrayIcon
             // 
@@ -129,14 +122,13 @@ namespace JoystickUsermodeDriver
             // 
             this.activeProfileDisplay.AllowColumnReorder = true;
             this.activeProfileDisplay.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            Device,
             feature,
             this.targetFeature});
+            this.activeProfileDisplay.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.activeProfileDisplay.HideSelection = false;
             this.activeProfileDisplay.Location = new System.Drawing.Point(246, 27);
             this.activeProfileDisplay.MultiSelect = false;
             this.activeProfileDisplay.Name = "activeProfileDisplay";
-            this.activeProfileDisplay.ShowGroups = false;
             this.activeProfileDisplay.Size = new System.Drawing.Size(551, 304);
             this.activeProfileDisplay.Sorting = System.Windows.Forms.SortOrder.Descending;
             this.activeProfileDisplay.TabIndex = 35;
@@ -147,7 +139,7 @@ namespace JoystickUsermodeDriver
             // targetFeature
             // 
             this.targetFeature.Text = "Target Feature";
-            this.targetFeature.Width = 160;
+            this.targetFeature.Width = 305;
             // 
             // profileList
             // 
