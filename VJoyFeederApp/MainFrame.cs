@@ -63,11 +63,13 @@ namespace JoystickUsermodeDriver
             if (WindowState == FormWindowState.Normal)
             {
                 MenuShow.Text = "Show";
+                Hide();
                 WindowState = FormWindowState.Minimized;
             }
             else
             {
                 MenuShow.Text = "Hide";
+                Show();
                 WindowState = FormWindowState.Normal;
                 RefreshDisplay();
             }

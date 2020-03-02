@@ -90,9 +90,9 @@ namespace JoystickUsermodeDriver
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.refreshToolStripMenuItem,
             this.reloadActiveProfileToolStripMenuItem1});
-            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip1.Location = new System.Drawing.Point(5, 5);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(809, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(799, 24);
             this.menuStrip1.TabIndex = 34;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -113,16 +113,16 @@ namespace JoystickUsermodeDriver
             // profileList
             // 
             this.profileList.FormattingEnabled = true;
-            this.profileList.Location = new System.Drawing.Point(13, 55);
+            this.profileList.Location = new System.Drawing.Point(13, 60);
             this.profileList.Name = "profileList";
-            this.profileList.Size = new System.Drawing.Size(227, 277);
+            this.profileList.Size = new System.Drawing.Size(227, 251);
             this.profileList.TabIndex = 36;
             this.profileList.SelectedIndexChanged += new System.EventHandler(this.profileList_SelectedIndexChanged);
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 39);
+            this.label1.Location = new System.Drawing.Point(17, 44);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(36, 13);
             this.label1.TabIndex = 37;
@@ -131,9 +131,13 @@ namespace JoystickUsermodeDriver
             // _profileEditor
             // 
             this._profileEditor.AutoScroll = true;
+            this._profileEditor.AutoScrollMinSize = new System.Drawing.Size(20, 0);
             this._profileEditor.BackColor = System.Drawing.SystemColors.Window;
             this._profileEditor.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this._profileEditor.ColumnCount = 3;
+            this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6F));
+            this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33F));
+            this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 35F));
             this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6F));
             this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 47F));
             this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 47F));
@@ -148,7 +152,7 @@ namespace JoystickUsermodeDriver
             this._profileEditor.RowCount = 2;
             this._profileEditor.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this._profileEditor.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this._profileEditor.Size = new System.Drawing.Size(537, 293);
+            this._profileEditor.Size = new System.Drawing.Size(537, 272);
             this._profileEditor.TabIndex = 38;
             // 
             // MainFrame
@@ -163,7 +167,10 @@ namespace JoystickUsermodeDriver
             this.Controls.Add(this.menuStrip1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MainMenuStrip = this.menuStrip1;
+            this.MaximumSize = new System.Drawing.Size(825, 393);
+            this.MinimumSize = new System.Drawing.Size(825, 393);
             this.Name = "MainFrame";
+            this.Padding = new System.Windows.Forms.Padding(5);
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.Text = "Virtual Joystick Driver";

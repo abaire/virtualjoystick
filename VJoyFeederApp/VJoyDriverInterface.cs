@@ -62,7 +62,7 @@ namespace JoystickUsermodeDriver
 
                     if (_sourceType == MappingType.pov && _virtualDeviceType == MappingType.button)
                     {
-                        return $"Buttons {VirtualDeviceIndex} - {VirtualDeviceIndex + 3}";
+                        return $"Buttons {VirtualDeviceIndex + 1} - {VirtualDeviceIndex + 4}";
                     }
 
                     return $"{VirtualDeviceType} {VirtualDeviceIndexName}";

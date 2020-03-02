@@ -19,8 +19,8 @@ namespace JoystickUsermodeDriver
             RowCount = 0;
             ColumnCount = 3;
             ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 6F));
-            ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 47F));
-            ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 47F));
+            ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
+            ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F));
             BorderStyle = BorderStyle.FixedSingle;
 
             InitializeComponent();
