@@ -196,7 +196,7 @@ inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(DEVICE_PACKET& packet)
                 INT16 src = (INT16)*((LONG*)(((BYTE*)&m_state) + JOYSTATEAXISOFFSETS[it->srcIndex]));
                 if (it->invert)
                 {
-                    src = AXIS_MAX - src;
+                    src *= -1;
                 }
                 SetReportAxis(report, static_cast<AxisIndex>(it->destIndex), src);
             }

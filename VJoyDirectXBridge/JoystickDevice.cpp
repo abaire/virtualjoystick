@@ -96,7 +96,6 @@ BOOL CJoystickDevice::EnumObjectsCallback(const DIDEVICEOBJECTINSTANCE* obj)
         HRESULT hr;
         if (FAILED(hr = m_inputDevice->SetProperty( DIPROP_RANGE, &diprg.diph )))
         {
-            //hr = m_inputDevice->GetProperty( DIPROP_RANGE, &diprg.diph );
             //PRINTMSG(( T_ERROR, "Failed to set range property on joystick axis!\n" ));
             return DIENUM_STOP;
         }
