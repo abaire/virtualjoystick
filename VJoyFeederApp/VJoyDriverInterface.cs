@@ -20,6 +20,7 @@ namespace JoystickUsermodeDriver
 
         public enum AxisIndex
         {
+            axis_none = 0xFFFF,
             axis_x = 0,
             axis_y,
             axis_throttle,
@@ -36,6 +37,8 @@ namespace JoystickUsermodeDriver
         [StructLayout(LayoutKind.Sequential)]
         public struct DeviceMapping
         {
+            public const UInt32 Unmapped = (UInt32) AxisIndex.axis_none;
+
             private MappingType _virtualDeviceType; //!< The type of the target virtual joystick state
             private UInt32 _virtualDeviceIndex; //!< The index of the target virtual joystick state
 

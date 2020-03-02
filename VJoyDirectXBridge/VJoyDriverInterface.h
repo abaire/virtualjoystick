@@ -14,6 +14,9 @@
 # define VJOYDRIVERINTERFACE_API __declspec(dllimport)
 #endif
 
+// Special ID used to indicate that a mapping should be ignored.
+#define UNMAPPED_INDEX 0xFFFF
+
 extern "C" {
 
 //! \enum   MappingType
@@ -29,6 +32,7 @@ typedef enum _MappingType
 //! \brief  Defines the index of the various axes in the JOYSTATEAXISOFFSETS
 typedef enum _AxisIndex
 {
+    axis_none = UNMAPPED_INDEX,
     axis_x = 0,
     axis_y,
     axis_throttle,

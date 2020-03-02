@@ -168,7 +168,15 @@ BOOL SetDeviceMapping(HANDLE attachID, const char* deviceGUIDStr, const DeviceMa
     if (it == g_driverHandles.end())
         return FALSE;
 
-    CJoystickDevice::DeviceMappingVector mappingVector(mappings, mappings + mappingCount);
+    CJoystickDevice::DeviceMappingVector mappingVector(mappingCount);
+    for (size_t i = 0; i < mappingCount; ++i)
+    {
+        auto mapping = *mappings++;
+        if (mapping.destIndex != UNMAPPED_INDEX)
+        {
+            mappingVector.push_back(mapping);
+        }
+    }
     GUID guid;
     ParseGUID(guid, deviceGUIDStr);
 

@@ -45,7 +45,11 @@ namespace JoystickUsermodeDriver
 
         private void PopulateProfileList()
         {
+            var selectedItem = DeviceRegistry.ActiveProfileName;
+            profileList.SelectedIndexChanged -= profileList_SelectedIndexChanged;
             profileList.DataSource = DeviceRegistry.GetProfiles();
+            profileList.SelectedItem = selectedItem;
+            profileList.SelectedIndexChanged += profileList_SelectedIndexChanged;
         }
 
         private void MenuClose_Click(object sender, EventArgs e)
@@ -119,8 +123,13 @@ namespace JoystickUsermodeDriver
 
         private void PopulateProfileDisplay()
         {
-            string selectedProfile = profileList.SelectedItem.ToString();
-            var profile = DeviceRegistry.LoadMappings(selectedProfile);
+            var selectedProfile = profileList.SelectedItem;
+            if (selectedProfile == null)
+            {
+                _profileEditor.Clear();
+                return;
+            }
+            var profile = DeviceRegistry.LoadMappings(selectedProfile.ToString());
             _profileEditor.SetProfile(profile, DeviceEnumeration);
         }
 
@@ -172,10 +181,6 @@ namespace JoystickUsermodeDriver
             BeginFeedingDriver();
         }
 
-        private void joystickDeviceList_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e)
-        {
-        }
-
         private void reloadActiveProfileToolStripMenuItem_Click(object sender, EventArgs e)
         {
             ReloadActiveProfile();
@@ -200,6 +205,7 @@ namespace JoystickUsermodeDriver
             StopFeedingDriver();
             var activeProfileName = (string) profileList.SelectedItem;
             DeviceRegistry.ActiveProfileName = activeProfileName;
+            RefreshDisplay();
             BeginFeedingDriver();
         }
     }

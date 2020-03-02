@@ -132,7 +132,11 @@ namespace JoystickUsermodeDriver
             // 
             this._profileEditor.AutoScroll = true;
             this._profileEditor.BackColor = System.Drawing.SystemColors.Window;
+            this._profileEditor.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this._profileEditor.ColumnCount = 3;
+            this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6F));
+            this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 47F));
+            this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 47F));
             this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 21F));
@@ -148,7 +152,7 @@ namespace JoystickUsermodeDriver
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(809, 348);
+            this.ClientSize = new System.Drawing.Size(809, 354);
             this.ControlBox = false;
             this.Controls.Add(this._profileEditor);
             this.Controls.Add(this.label1);

@@ -26,14 +26,18 @@ namespace JoystickUsermodeDriver
             InitializeComponent();
         }
 
-        public void SetProfile(
-            SortedDictionary<string, List<VJoyDriverInterface.DeviceMapping>> profile,
-            List<DeviceDescription> deviceEnumeration)
+        public void Clear()
         {
             Controls.Clear();
             RowStyles.Clear();
             RowCount = 0;
+        }
 
+        public void SetProfile(
+            SortedDictionary<string, List<VJoyDriverInterface.DeviceMapping>> profile,
+            List<DeviceDescription> deviceEnumeration)
+        {
+            Clear();
             Func<string, string> GetDeviceName = (deviceID) =>
             {
                 foreach (var dd in deviceEnumeration)
