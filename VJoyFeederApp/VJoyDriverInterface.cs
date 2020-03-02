@@ -284,5 +284,13 @@ namespace JoystickUsermodeDriver
             UInt32 h,
             [MarshalAs(UnmanagedType.LPStr)] string deviceGUID,
             DeviceInfoCallback cb);
+
+        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "UpdateLoopDelay",
+            SetLastError = false)]
+        public static extern UInt32 UpdateLoopDelay(UInt32 h);
+
+        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "SetUpdateLoopDelay",
+            SetLastError = false)]
+        public static extern bool SetUpdateLoopDelay(UInt32 h, UInt32 delay);
     }
 }

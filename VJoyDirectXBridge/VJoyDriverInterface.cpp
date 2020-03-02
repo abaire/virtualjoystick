@@ -193,6 +193,26 @@ BOOL ClearDeviceMappings(HANDLE attachID)
     return it->second.ClearDeviceMappings();
 }
 
+extern "C"
+VJOYDRIVERINTERFACE_API
+UINT32 UpdateLoopDelay(HANDLE attachID)
+{
+    HandleMap::iterator it = g_driverHandles.find(attachID);
+    if (it == g_driverHandles.end())
+        return FALSE;
+    return it->second.UpdateLoopDelay();
+}
+
+extern "C"
+VJOYDRIVERINTERFACE_API
+BOOL SetUpdateLoopDelay(HANDLE attachID, UINT32 delay)
+{
+    HandleMap::iterator it = g_driverHandles.find(attachID);
+    if (it == g_driverHandles.end())
+        return FALSE;
+    it->second.SetUpdateLoopDelay(delay);
+    return TRUE;
+}
 
 static inline void ParseGUID(GUID& ret, const char* str)
 {

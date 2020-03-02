@@ -97,4 +97,10 @@ BOOL SetDeviceMapping(HANDLE driver, const char* deviceGUID, const DeviceMapping
 VJOYDRIVERINTERFACE_API
 BOOL ClearDeviceMappings(HANDLE driver);
 
+VJOYDRIVERINTERFACE_API
+UINT32 UpdateLoopDelay(HANDLE driver);
+
+VJOYDRIVERINTERFACE_API
+BOOL SetUpdateLoopDelay(HANDLE driver, UINT32 delay);
+
 } // extern "C"

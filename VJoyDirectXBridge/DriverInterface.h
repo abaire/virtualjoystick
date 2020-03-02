@@ -15,6 +15,8 @@
 
 #include "JoystickDevice.h"
 
+#define DEFAULT_LOOP_DELAY  15
+
 
 //= C L A S S E S =============================================================================
 //! \class	CDriverInterface
@@ -80,6 +82,16 @@ public:
         return TRUE;
     }
 
+    DWORD UpdateLoopDelay() const { return m_updateLoopDelay; }
+    void SetUpdateLoopDelay(DWORD delay)
+    {
+        if (delay <= 0) {
+            delay = DEFAULT_LOOP_DELAY;
+        }
+
+        m_updateLoopDelay = delay;
+    }
+
     BOOL EnumerateDevices(DeviceEnumCB cb);
     BOOL GetDeviceInfo(
         const GUID& deviceGUID,
@@ -139,7 +151,7 @@ protected:
 
     HANDLE m_interruptEvent;
 
-    DWORD m_updateLoopDelay;
+    volatile DWORD m_updateLoopDelay;
 
     static LPDIRECTINPUT8 m_pDI;
     DeviceVector m_inputDeviceVector;

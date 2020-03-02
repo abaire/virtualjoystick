@@ -8,8 +8,6 @@
 //= D E F I N E S =============================================================================
 static const GUID PRODUCT_VJOY = {0x0001EBA0, 0x0000, 0x0000, {0x00, 0x00, 0x50, 0x49, 0x44, 0x56, 0x49, 0x44}};
 
-#define DEFAULT_LOOP_DELAY  15
-
 #define SAFE_DELETE(p)  { if(p) { delete (p);     (p)=NULL; } }
 #define SAFE_RELEASE(p) { if(p) { (p)->Release(); (p)=NULL; } }
 
