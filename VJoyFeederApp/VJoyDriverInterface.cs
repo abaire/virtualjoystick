@@ -60,6 +60,11 @@ namespace JoystickUsermodeDriver
                         return VirtualDeviceIndexName;
                     }
 
+                    if (_sourceType == MappingType.pov && _virtualDeviceType == MappingType.button)
+                    {
+                        return $"Buttons {VirtualDeviceIndex} - {VirtualDeviceIndex + 3}";
+                    }
+
                     return $"{VirtualDeviceType} {VirtualDeviceIndexName}";
                 }
             }
@@ -77,7 +82,7 @@ namespace JoystickUsermodeDriver
                         return SourceIndexName;
                     }
 
-                    return $"{VirtualDeviceType} {VirtualDeviceIndexName}";
+                    return $"{SourceType} {SourceIndexName}";
                 }
             }
 

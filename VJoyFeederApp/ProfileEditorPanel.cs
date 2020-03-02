@@ -98,15 +98,22 @@ namespace JoystickUsermodeDriver
                 case VJoyDriverInterface.MappingType.button:
                     for (var i = 0; i < VJoyDriverInterface.MaxVirtualButtons; ++i)
                     {
-                        ret.Items.Add(i + 1);
+                        ret.Items.Add($"Button {i + 1}");
                     }
                     break;
 
                 case VJoyDriverInterface.MappingType.pov:
                     for (var i = 0; i < VJoyDriverInterface.MaxVirtualPOVs; ++i)
                     {
-                        ret.Items.Add(i + 1);
+                        ret.Items.Add($"POV {i + 1}");
                     }
+
+                    // POVs can also be mapped to 4-button ranges.
+                    for (var i = 0; i < VJoyDriverInterface.MaxVirtualButtons - 4; ++i)
+                    {
+                        ret.Items.Add($"Buttons {i + 1} - {i + 4}");
+                    }
+
                     break;
             }
 
