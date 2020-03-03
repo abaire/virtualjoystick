@@ -12,11 +12,32 @@ namespace JoystickUsermodeDriver
         private const string DEVICE_NAME = "DeviceName";
         private const string CURRENT_DEVICE_PROTOTYPES = "CurrentDevicePrototypes";
 
+        public const string REGISTRY_VALUE_UPDATE_LOOP_DELAY = "updateLoopDelay";
+
         public const string REGISTRY_VALUE_VIRTUAL_DEVICE_TYPE = "virtualType";
         public const string REGISTRY_VALUE_VIRTUAL_DEVICE_INDEX = "virtualIndex";
         public const string REGISTRY_VALUE_SOURCE_TYPE = "sourceType";
         public const string REGISTRY_VALUE_SOURCE_INDEX = "sourceIndex";
         public const string REGISTRY_VALUE_INVERT = "invert";
+
+        public static UInt32 UpdateLoopDelayMillis
+        {
+            get
+            {
+                using (RegistryKey k = Registry.CurrentUser.CreateSubKey(DeviceRegistry.REGISTRY_KEY))
+                {
+                    return Convert.ToUInt32(k.GetValue(REGISTRY_VALUE_UPDATE_LOOP_DELAY, 0));
+                }
+            }
+
+            set
+            {
+                using (RegistryKey k = Registry.CurrentUser.CreateSubKey(DeviceRegistry.REGISTRY_KEY))
+                {
+                    k.SetValue(REGISTRY_VALUE_UPDATE_LOOP_DELAY, value, RegistryValueKind.DWord);
+                }
+            }
+        }
 
         public static List<string> GetProfiles()
         {
