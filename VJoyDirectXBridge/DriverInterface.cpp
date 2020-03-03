@@ -73,7 +73,7 @@ CDriverInterface::~CDriverInterface()
     CloseDriverHandle();
 }
 
-CDriverInterface& CDriverInterface::operator=(CDriverInterface&& o)
+CDriverInterface& CDriverInterface::operator=(CDriverInterface&& o) noexcept
 {
     if (&o == this) { return *this; }
 
@@ -395,12 +395,11 @@ BOOL CDriverInterface::EnumerateDevices(DeviceEnumCB cb)
     return TRUE;
 }
 
-
 BOOL CDriverInterface::GetDeviceInfo(
     const GUID& deviceGUID,
-    DeviceObjectInfoVector& axes,
-    DeviceObjectInfoVector& buttons,
-    DeviceObjectInfoVector& povs)
+    _Out_ DeviceObjectInfoVector& axes,
+    _Out_ DeviceObjectInfoVector& buttons,
+    _Out_ DeviceObjectInfoVector& povs)
 {
     axes.clear();
     buttons.clear();

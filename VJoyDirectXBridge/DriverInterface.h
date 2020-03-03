@@ -62,7 +62,7 @@ public:
 
     ~CDriverInterface();
 
-    CDriverInterface& operator=(CDriverInterface&&);
+    CDriverInterface& operator=(CDriverInterface&&) noexcept;
 
     inline BOOL AddDeviceMapping(const GUID& guid, const CJoystickDevice::DeviceMappingVector& mapping)
     {
