@@ -17,20 +17,30 @@
 // Special ID used to indicate that a mapping should be ignored.
 #define UNMAPPED_INDEX 0xFFFF
 
+// Keyboard key modifiers.
+#define MODIFIER_LEFT_CTRL (1 << 0)
+#define MODIFIER_LEFT_SHIFT (1 << 1)
+#define MODIFIER_LEFT_ALT (1 << 2)
+#define MODIFIER_LEFT_WIN (1 << 3)
+#define MODIFIER_RIGHT_CTRL (1 << 4)
+#define MODIFIER_RIGHT_SHIFT (1 << 5)
+#define MODIFIER_RIGHT_ALT (1 << 6)
+#define MODIFIER_RIGHT_WIN (1 << 7)
+
 extern "C" {
 
 //! \enum   MappingType
 //! \brief  Defines the type of value to be mapped to the virtual driver
-typedef enum _MappingType
+enum class MappingType
 {
     mt_axis = 0,
     mt_pov,
     mt_button
-} MappingType;
+};
 
 //! \enum   AxisIndex
 //! \brief  Defines the index of the various axes in the JOYSTATEAXISOFFSETS
-typedef enum _AxisIndex
+enum class AxisIndex
 {
     axis_none = UNMAPPED_INDEX,
     axis_x = 0,
@@ -44,7 +54,7 @@ typedef enum _AxisIndex
 
     // Additional axes are not available in DIJOYSTATE2.
     axis_rudder,
-} AxisIndex;
+};
 
 //! \struct DeviceMapping
 //! \brief  Maps a specific dinput state variable to an output slot in the virtual joystick

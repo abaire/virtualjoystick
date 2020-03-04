@@ -25,13 +25,13 @@ Environment:
 #define HIDVJOY_PID 0x0001
 
 #define REPORTID_JOYSTICK 0x05
+#define REPORTID_KEYBOARD 0x06
 #define REPORTID_VENDOR 0x40
 
 
 #include <pshpack1.h>
 
-// Contents must match ReportDescriptor in HIDReportDescriptor. 
-typedef struct _DEVICE_REPORT
+typedef struct _JOYSTICK_SUBREPORT
 {
     INT16 X;
     INT16 Y;
@@ -49,14 +49,20 @@ typedef struct _DEVICE_REPORT
     INT8  POV;
 
     UCHAR Button[16];  // 128 button bits
+} JOYSTICK_SUBREPORT;
 
-    // INT8 ExtendedPOV[3];
-} DEVICE_REPORT, * PDEVICE_REPORT;
+typedef struct _KEYBOARD_SUBREPORT
+{
+    UINT8 modifierKeys;
+    UINT8 keycodes[7];
+} KEYBOARD_SUBREPORT;
 
-typedef struct _Device_Packet
+typedef struct _VENDOR_DEVICE_PACKET
 {
     UINT8 id;
-    DEVICE_REPORT report;
-} DEVICE_PACKET, * PDEVICE_PACKET;
+    JOYSTICK_SUBREPORT joystick;
+    KEYBOARD_SUBREPORT keyboard;
+} VENDOR_DEVICE_PACKET;
+
 
 #include <poppack.h>

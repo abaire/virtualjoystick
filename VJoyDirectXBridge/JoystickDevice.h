@@ -51,7 +51,7 @@ public:
     //! \warning  It is the responsibility of the caller to prevent any calls to Add/ClearMapping
     //!           while this function is being invoked!  Failure to do so may cause crashes 
     //!           or inconsistent state!
-    inline BOOL GetVirtualStateUpdatePacket(DEVICE_PACKET& packet);
+    inline BOOL GetVirtualStateUpdatePacket(VENDOR_DEVICE_PACKET& packet);
 
 
     inline BOOL IsPolled() const { return m_isPolled;  }
@@ -108,60 +108,60 @@ protected:
 //-------------------------------------------------------------------------------------------
 //  SetButton
 //-------------------------------------------------------------------------------------------
-static __inline void SetButton(DEVICE_PACKET& packet, UINT32 index, BOOL val)
+static __inline void SetButton(VENDOR_DEVICE_PACKET& packet, UINT32 index, BOOL val)
 {
     UINT32 offset = index >> 3;
     UINT32 bit = 1 << (index & 0x07);
 
     if (val)
     {
-        packet.report.Button[offset] |= bit;
+        packet.joystick.Button[offset] |= bit;
     }
     else
     {
-        packet.report.Button[offset] &= ~bit;
+        packet.joystick.Button[offset] &= ~bit;
     }
 }
 
 
-inline void SetReportAxis(DEVICE_REPORT& report, AxisIndex axis, INT16 value)
+inline void SetReportAxis(VENDOR_DEVICE_PACKET& report, AxisIndex axis, INT16 value)
 {
     switch (axis)
     {
-    case axis_x:
-        report.X = value;
+    case AxisIndex::axis_x:
+        report.joystick.X = value;
         return;
 
-    case axis_y:
-        report.Y = value;
+    case AxisIndex::axis_y:
+        report.joystick.Y = value;
         return;
 
-    case axis_throttle:
-        report.Throttle = value;
+    case AxisIndex::axis_throttle:
+        report.joystick.Throttle = value;
         return;
 
-    case axis_rx:
-        report.rX = value;
+    case AxisIndex::axis_rx:
+        report.joystick.rX = value;
         return;
 
-    case axis_ry:
-        report.rY = value;
+    case AxisIndex::axis_ry:
+        report.joystick.rY = value;
         return;
 
-    case axis_rz:
-        report.rZ = value;
+    case AxisIndex::axis_rz:
+        report.joystick.rZ = value;
         return;
 
-    case axis_slider:
-        report.Slider = value;
+    case AxisIndex::axis_slider:
+        report.joystick.Slider = value;
         return;
 
-    case axis_dial:
-        report.Dial = value;
+    case AxisIndex::axis_dial:
+        report.joystick.Dial = value;
         return;
 
-    case axis_rudder:
-        report.Rudder = value;
+    case AxisIndex::axis_rudder:
+        report.joystick.Rudder = value;
         return;
     }
 }
@@ -169,12 +169,10 @@ inline void SetReportAxis(DEVICE_REPORT& report, AxisIndex axis, INT16 value)
 //-------------------------------------------------------------------------------------------
 //	
 //-------------------------------------------------------------------------------------------
-inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(DEVICE_PACKET& packet)
+inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(VENDOR_DEVICE_PACKET& packet)
 {
     if (!PollPhysicalStick())
         return FALSE;
-
-    auto& report = packet.report;
 
     // NOTE: There is a concurrency issue here that we're requiring the caller to handle. It should
     // not be permissible for the device mapping vector to be modified (via Add/Clear mapping) while
@@ -186,7 +184,7 @@ inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(DEVICE_PACKET& packet)
     {
         switch (it->destBlock)
         {
-        case mt_axis:
+        case MappingType::mt_axis:
             {
                 // JOYSTATEAXISOFFSETS holds the byte offset from the start of the joystate struct
                 // to the various axis IDs.
@@ -198,23 +196,23 @@ inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(DEVICE_PACKET& packet)
                 {
                     src *= -1;
                 }
-                SetReportAxis(report, static_cast<AxisIndex>(it->destIndex), src);
+                SetReportAxis(packet, static_cast<AxisIndex>(it->destIndex), src);
             }
             break;
 
-        case mt_pov:
-            report.POV = MAP_RANGE(m_state.rgdwPOV[it->srcIndex]);
+        case MappingType::mt_pov:
+            packet.joystick.POV = MAP_RANGE(m_state.rgdwPOV[it->srcIndex]);
             break;
 
-        case mt_button:
+        case MappingType::mt_button:
             {
                 switch (it->srcBlock)
                 {
-                case mt_button:
+                case MappingType::mt_button:
                     SETBUTTON(it->destIndex, (m_state.rgbButtons[it->srcIndex] == 0x80));
                     break;
 
-                case mt_pov:
+                case MappingType::mt_pov:
                     {
                         BOOL buttonSet[4] = {FALSE,FALSE,FALSE,FALSE};
 

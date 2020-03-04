@@ -242,14 +242,15 @@ void CDriverInterface::RunPollingLoop(void)
 
     UINT32 numFailures = 0;
 
-    DEVICE_PACKET packet;
+    VENDOR_DEVICE_PACKET packet;
     memset(&packet, 0, sizeof(packet));
     packet.id = REPORTID_VENDOR;
 
     while (m_updateThreadRunning)
     {
         // Invalidate the POV axis
-        packet.report.POV = -1;
+        packet.joystick.POV = -1;
+        memset(&packet.keyboard, 0, sizeof(packet.keyboard));
 
         DeviceVector::iterator it = m_inputDeviceVector.begin();
         DeviceVector::iterator itEnd = m_inputDeviceVector.end();
@@ -290,7 +291,7 @@ void CDriverInterface::RunInterruptLoop(void)
 {
     UINT32 numFailures = 0;
 
-    DEVICE_PACKET packet;
+    VENDOR_DEVICE_PACKET packet;
     memset(&packet, 0, sizeof(packet));
     packet.id = REPORTID_VENDOR;
 
@@ -323,17 +324,17 @@ void CDriverInterface::RunInterruptLoop(void)
             continue;
 
         case WAIT_FAILED:
-            {
+        {
 #if _DEBUG
-                TCHAR buffer[1024];
-                sprintf_s(buffer,
-                          1024,
-                          "Failed to wait on interrupt event:error %d\n",
-                          GetLastError());
-                OutputDebugString(buffer);
+            TCHAR buffer[1024];
+            sprintf_s(buffer,
+                1024,
+                "Failed to wait on interrupt event:error %d\n",
+                GetLastError());
+            OutputDebugString(buffer);
 #endif
-            }
-            continue;
+        }
+        continue;
         }
 
         // Invalidate the POV axis
@@ -348,18 +349,18 @@ void CDriverInterface::RunInterruptLoop(void)
         // Send the request on to the driver
         DWORD bytesWritten;
         if (!WriteFile(m_driverHandle,
-                       &packet,
-                       sizeof(packet),
-                       &bytesWritten,
-                       NULL))
+            &packet,
+            sizeof(packet),
+            &bytesWritten,
+            NULL))
         {
 #if _DEBUG
             TCHAR buffer[1024];
             sprintf_s(buffer,
-                      1024,
-                      "Failed to write output report to the driver: failure #%lu, error %d\n",
-                      numFailures,
-                      GetLastError());
+                1024,
+                "Failed to write output report to the driver: failure #%lu, error %d\n",
+                numFailures,
+                GetLastError());
             OutputDebugString(buffer);
 #endif
 

@@ -5,7 +5,7 @@
 HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
     0x05, USAGE_PAGE_GENERIC_DESKTOP, // USAGE_PAGE (Generic Desktop)
     0x15, 0x00, // LOGICAL_MINIMUM (0)
-    0x09, 0x04, // USAGE (Joystick)
+    0x09, USAGE_JOYSTICK, // USAGE (Joystick)
     0xa1, 0x01, // COLLECTION (Application)
     0x85, REPORTID_JOYSTICK, //   REPORT_ID (Joystick)
 
@@ -102,9 +102,38 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
 
     0xc0, // END_COLLECTION (REPORTID_JOYSTICK)
 
+    //------------------ Keyboard ------------------------//
+
+    0x05, USAGE_PAGE_GENERIC_DESKTOP, // USAGE_PAGE (Generic Desktop)
+    0x15, 0x00, // LOGICAL_MINIMUM (0)
+    0x09, USAGE_KEYBOARD, // USAGE (Keyboard)
+    0xa1, 0x01, // COLLECTION (Application)
+    0x85, REPORTID_KEYBOARD, //   REPORT_ID (Keyboard)
+
+    //   Modifier keys
+    0x05, USAGE_PAGE_KEYCODES, //   Usage Page (Key Codes)
+    0x75, 0x01, //   Report Size (1)
+    0x95, 0x08, //   Report Count (8)
+    0x19, 0xE0, //   Usage Minimum (0xE0)
+    0x29, 0xE7, //   Usage Maximum (0xE7)
+    0x15, 0x00, //   Logical Minimum (0)
+    0x25, 0x01, //   Logical Maximum (1)
+    0x81, 0x02, //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+
+    //    Actual keycodes
+    0x95, 0x07, //   Report Count
+    0x75, 0x08, //   Report Size (8)
+    0x15, 0x00, //   Logical Minimum (0)
+    0x25, 0x64, //   Logical Maximum (100)
+    0x05, 0x07, //   Usage Page (Key Codes)
+    0x19, 0x00, //   Usage Minimum (0x00)
+    0x29, 0x65, //   Usage Maximum (100)
+    0x81, 0x00, //   Input (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
+
+    0xc0, // END_COLLECTION (Application)
 
     //------------------ Vendor Defined ------------------------//
-    // Must match structure of _DEVICE_REPORT in common.h.
+    // Must match structure of VENDOR_DEVICE_PACKET (minus the ID byte) in common.h.
     // Must also map to the structure described via the USAGE reports above.
     0x06, 0x00, 0xFF, // USAGE_PAGE (Vendor Defined Page 1)
     0x09, 0x01, // USAGE (Vendor Usage 1)
@@ -132,14 +161,29 @@ HID_REPORT_DESCRIPTOR ReportDescriptor[] = {
     0x09, 0x02, //   USAGE (Vendor Usage 1)
     0x91, 0x02, //   OUTPUT (Data,Var,Abs)
 
-    0xc0 // END_COLLECTION
+    0x15, 0x00, //   Logical Minimum (0)
+    0x25, 0x01, //   Logical Maximum (1)
+    0x75, 0x01, //   Report Size (1)
+    0x95, 0x08, //   Report Count (8)
+    0x09, 0x02, //   USAGE (Vendor Usage 1)
+    0x91, 0x02, //   OUTPUT (Data,Var,Abs)
+
+    0x15, 0x00, //   Logical Minimum (0)
+    0x25, 0x64, //   Logical Maximum (100)
+    0x75, 0x08, //   Report Size (8)
+    0x95, 0x07, //   Report Count: Key code array
+    0x19, 0x00, //   Usage Minimum (0x00)
+    0x29, 0x65, //   Usage Maximum (100)
+    0x91, 0x02, //   OUTPUT (Data,Var,Abs)
+
+    0xc0 // END_COLLECTION (Application)
 };
 
 HID_DESCRIPTOR HidDescriptor = {
     0x09, // length of HID descriptor
     0x21, // descriptor type == HID  0x21
     0x0100, // hid spec release
-    0x00, // country code == Not Specified
+    33, // country code
     0x01, // number of HID class descriptors
     {
         0x22, // report descriptor type 0x22

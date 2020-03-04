@@ -144,17 +144,17 @@ BOOL GetDeviceInfo(HANDLE attachID, _In_ const char* deviceGUIDStr, DeviceInfoCB
 
     for each (auto info in axes)
     {
-        callbackFunc(mt_axis, info.first.c_str(), info.second);
+        callbackFunc(MappingType::mt_axis, info.first.c_str(), info.second);
     }
 
     for each (auto info in buttons)
     {
-        callbackFunc(mt_button, info.first.c_str(), info.second);
+        callbackFunc(MappingType::mt_button, info.first.c_str(), info.second);
     }
 
     for each (auto info in povs)
     {
-        callbackFunc(mt_pov, info.first.c_str(), info.second);
+        callbackFunc(MappingType::mt_pov, info.first.c_str(), info.second);
     }
 
     return TRUE;
