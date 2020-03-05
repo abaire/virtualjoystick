@@ -237,6 +237,7 @@ void CDriverInterface::RunPollingLoop(void)
 {
     if (!AcquireDevices())
     {
+        ReleaseDevices();
         return;
     }
 
