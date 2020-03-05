@@ -10,7 +10,8 @@ typedef struct _MANUAL_QUEUE_CONTEXT
 {
     WDFQUEUE queue;
     DEVICE_CONTEXT* deviceContext;
-} MANUAL_QUEUE_CONTEXT, * PMANUAL_QUEUE_CONTEXT;
+    WDFTIMER timer;
+} MANUAL_QUEUE_CONTEXT, *PMANUAL_QUEUE_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(MANUAL_QUEUE_CONTEXT, GetManualQueueContext);
 
@@ -27,9 +28,10 @@ NTSTATUS RequestGetHidXferPacket_ToWriteToDevice(
 
 
 NTSTATUS ManualQueueCreate(
-    _In_ WDFDEVICE Device, 
-    _Out_ WDFQUEUE* Queue);
-
+    _In_ WDFDEVICE device,
+    _In_ EVT_WDF_TIMER timerFunc,
+    _Out_ WDFQUEUE* queueRet
+);
 
 /*++
 
@@ -52,8 +54,8 @@ Return Value:
 --*/
 NTSTATUS
 RequestCopyFromBuffer(
-    _In_ WDFREQUEST Request,
-    _In_ PVOID SourceBuffer,
-    _When_(NumBytesToCopyFrom == 0, __drv_reportError(NumBytesToCopyFrom cannot be zero))
-    _In_ size_t NumBytesToCopyFrom
+    _In_ WDFREQUEST request,
+    _In_ PVOID sourceBuffer,
+    _When_(numBytesToCopyFrom == 0, __drv_reportError(numBytesToCopyFrom cannot be zero))
+    _In_ size_t numBytesToCopyFrom
 );

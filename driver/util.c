@@ -152,8 +152,9 @@ NTSTATUS RequestGetHidXferPacket_ToWriteToDevice(
 }
 
 NTSTATUS ManualQueueCreate(
-    _In_ WDFDEVICE Device,
-    _Out_ WDFQUEUE* Queue
+    _In_ WDFDEVICE device,
+    _In_ EVT_WDF_TIMER timerFunc,
+    _Out_ WDFQUEUE* queueRet
 )
 {
     NTSTATUS status;
@@ -161,6 +162,8 @@ NTSTATUS ManualQueueCreate(
     WDF_OBJECT_ATTRIBUTES queueAttributes;
     WDFQUEUE queue;
     PMANUAL_QUEUE_CONTEXT queueContext;
+    WDF_TIMER_CONFIG timerConfig;
+    WDF_OBJECT_ATTRIBUTES timerAttributes;
 
     WDF_IO_QUEUE_CONFIG_INIT(
         &queueConfig,
@@ -172,7 +175,7 @@ NTSTATUS ManualQueueCreate(
         MANUAL_QUEUE_CONTEXT);
 
     status = WdfIoQueueCreate(
-        Device,
+        device,
         &queueConfig,
         &queueAttributes,
         &queue);
@@ -185,26 +188,40 @@ NTSTATUS ManualQueueCreate(
 
     queueContext = GetManualQueueContext(queue);
     queueContext->queue = queue;
-    queueContext->deviceContext = GetDeviceContext(Device);
+    queueContext->deviceContext = GetDeviceContext(device);
 
-    *Queue = queue;
+    WDF_TIMER_CONFIG_INIT(&timerConfig, timerFunc);
+
+    WDF_OBJECT_ATTRIBUTES_INIT(&timerAttributes);
+    timerAttributes.ParentObject = queue;
+    status = WdfTimerCreate(&timerConfig,
+                            &timerAttributes,
+                            &queueContext->timer);
+
+    if (!NT_SUCCESS(status))
+    {
+        KdPrint(("WdfTimerCreate failed 0x%x\n", status));
+        return status;
+    }
+
+    *queueRet = queue;
 
     return status;
 }
 
 NTSTATUS
 RequestCopyFromBuffer(
-    _In_ WDFREQUEST Request,
-    _In_ PVOID SourceBuffer,
-    _When_(NumBytesToCopyFrom == 0, __drv_reportError(NumBytesToCopyFrom cannot be zero))
-    _In_ size_t NumBytesToCopyFrom
+    _In_ WDFREQUEST request,
+    _In_ PVOID sourceBuffer,
+    _When_(numBytesToCopyFrom == 0, __drv_reportError(numBytesToCopyFrom cannot be zero))
+    _In_ size_t numBytesToCopyFrom
 )
 {
     NTSTATUS status;
     WDFMEMORY memory;
     size_t outputBufferLength;
 
-    status = WdfRequestRetrieveOutputMemory(Request, &memory);
+    status = WdfRequestRetrieveOutputMemory(request, &memory);
     if (!NT_SUCCESS(status))
     {
         KdPrint(("WdfRequestRetrieveOutputMemory failed 0x%x\n", status));
@@ -212,24 +229,24 @@ RequestCopyFromBuffer(
     }
 
     WdfMemoryGetBuffer(memory, &outputBufferLength);
-    if (outputBufferLength < NumBytesToCopyFrom)
+    if (outputBufferLength < numBytesToCopyFrom)
     {
         status = STATUS_INVALID_BUFFER_SIZE;
         KdPrint(("RequestCopyFromBuffer: buffer too small. Size %d, expect %d\n",
-            (int)outputBufferLength, (int)NumBytesToCopyFrom));
+            (int)outputBufferLength, (int)numBytesToCopyFrom));
         return status;
     }
 
     status = WdfMemoryCopyFromBuffer(memory,
-        0,
-        SourceBuffer,
-        NumBytesToCopyFrom);
+                                     0,
+                                     sourceBuffer,
+                                     numBytesToCopyFrom);
     if (!NT_SUCCESS(status))
     {
         KdPrint(("WdfMemoryCopyFromBuffer failed 0x%x\n", status));
         return status;
     }
 
-    WdfRequestSetInformation(Request, NumBytesToCopyFrom);
+    WdfRequestSetInformation(request, numBytesToCopyFrom);
     return status;
 }

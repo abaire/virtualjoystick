@@ -8,6 +8,11 @@
 #define T_TRACE         DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL
 #define T_INFO          DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL
 
+// Maximum number of milliseconds to wait for information from the feeder
+// application before resetting driver state. This prevents a disconnect
+// from spamming infinite keyboard events.
+#define FEEDER_DISCONNECT_TIMEOUT 1000
+
 #define DUMP_VENDOR_DEVICE_REPORT( _v_ ) KdPrintEx(( \
     T_WARNING, \
     "\tX: 0x%X\n" \
@@ -80,6 +85,7 @@ typedef struct _KEYBOARD_REPORT
 #include <poppack.h>
 
 static EVT_WDF_DRIVER_DEVICE_ADD EvtDeviceAdd;
+static EVT_WDF_TIMER EvtTimer;
 
 static NTSTATUS QueueCreate(
     _In_ WDFDEVICE Device,
@@ -94,24 +100,24 @@ static NTSTATUS ReadReport(
 );
 
 static NTSTATUS DequeuePendingReadRequest(
-    _In_ WDFQUEUE queue, 
+    _In_ WDFQUEUE queue,
     _In_ WDFREQUEST* reportRequest);
 
 static NTSTATUS HandlePendingJoystickReadReportRequest(
-    _In_ WDFQUEUE pendingReadQueue,
+    _In_ WDFQUEUE queue,
     _In_ JOYSTICK_SUBREPORT* pPacket,
     _Out_ ULONG* bytesWritten
 );
 
 static NTSTATUS HandlePendingKeyboardReadReportRequest(
-    _In_ WDFQUEUE pendingReadQueue,
+    _In_ WDFQUEUE queue,
     _In_ KEYBOARD_SUBREPORT* keyboardState,
     _Out_ ULONG* bytesWritten
 );
 
 static NTSTATUS WriteReport(
-    _In_ PQUEUE_CONTEXT QueueContext,
-    _In_ WDFREQUEST Request
+    _In_ PQUEUE_CONTEXT queueContext,
+    _In_ WDFREQUEST request
 );
 
 static NTSTATUS GetString(
@@ -250,7 +256,10 @@ Return Value:
         return status;
     }
 
-    status = ManualQueueCreate(device, &deviceContext->pendingReadQueue);
+    status = ManualQueueCreate(
+        device,
+        EvtTimer,
+        &deviceContext->pendingReadQueue);
     if (!NT_SUCCESS(status))
     {
         return status;
@@ -410,8 +419,8 @@ static NTSTATUS ReadReport(
 
 
 static NTSTATUS WriteReport(
-    _In_ PQUEUE_CONTEXT QueueContext,
-    _In_ WDFREQUEST Request
+    _In_ PQUEUE_CONTEXT queueContext,
+    _In_ WDFREQUEST request
 )
 {
     HID_XFER_PACKET transferPacket;
@@ -420,7 +429,7 @@ static NTSTATUS WriteReport(
     ULONG bytesWritten = 0;
 
     status = RequestGetHidXferPacket_ToWriteToDevice(
-        Request,
+        request,
         &transferPacket);
     if (!NT_SUCCESS(status))
     {
@@ -455,17 +464,17 @@ static NTSTATUS WriteReport(
 
     for (UINT i = 0; i < 2; ++i)
     {
-        switch (QueueContext->deviceContext->lastServedReportID)
+        switch (queueContext->deviceContext->lastServedReportID)
         {
         default:
         case REPORTID_KEYBOARD:
             status = HandlePendingJoystickReadReportRequest(
-                QueueContext->deviceContext->pendingReadQueue,
+                queueContext->deviceContext->pendingReadQueue,
                 &updatePacket->joystick,
                 &bytesWritten);
             if (NT_SUCCESS(status))
             {
-                QueueContext->deviceContext->lastServedReportID = REPORTID_JOYSTICK;
+                queueContext->deviceContext->lastServedReportID = REPORTID_JOYSTICK;
             }
             else
             {
@@ -475,12 +484,12 @@ static NTSTATUS WriteReport(
 
         case REPORTID_JOYSTICK:
             status = HandlePendingKeyboardReadReportRequest(
-                QueueContext->deviceContext->pendingReadQueue,
+                queueContext->deviceContext->pendingReadQueue,
                 &updatePacket->keyboard,
                 &bytesWritten);
             if (NT_SUCCESS(status))
             {
-                QueueContext->deviceContext->lastServedReportID = REPORTID_KEYBOARD;
+                queueContext->deviceContext->lastServedReportID = REPORTID_KEYBOARD;
             }
             else
             {
@@ -489,7 +498,7 @@ static NTSTATUS WriteReport(
             break;
         }
 
-        WdfRequestSetInformation(Request, bytesWritten);
+        WdfRequestSetInformation(request, bytesWritten);
     }
 
 
@@ -517,7 +526,7 @@ static NTSTATUS DequeuePendingReadRequest(_In_ WDFQUEUE queue, _In_ WDFREQUEST* 
 }
 
 static NTSTATUS HandlePendingJoystickReadReportRequest(
-    _In_ WDFQUEUE pendingReadQueue,
+    _In_ WDFQUEUE queue,
     _In_ JOYSTICK_SUBREPORT* joystickState,
     _Out_ ULONG* bytesWritten
 )
@@ -530,7 +539,7 @@ static NTSTATUS HandlePendingJoystickReadReportRequest(
 
     KdPrintEx((T_TRACE, "HandlePendingJoystickReadReportRequest\n"));
 
-    status = DequeuePendingReadRequest(pendingReadQueue, &request);
+    status = DequeuePendingReadRequest(queue, &request);
     if (!NT_SUCCESS(status))
     {
         return status;
@@ -544,8 +553,8 @@ static NTSTATUS HandlePendingJoystickReadReportRequest(
     if (!NT_SUCCESS(status))
     {
         KdPrintEx((
-            T_ERROR, 
-            "HandlePendingJoystickReadReportRequest: WdfRequestRetrieveOutputBuffer failed: 0x%X\n", 
+            T_ERROR,
+            "HandlePendingJoystickReadReportRequest: WdfRequestRetrieveOutputBuffer failed: 0x%X\n",
             status));
         return status;
     }
@@ -570,20 +579,21 @@ static NTSTATUS HandlePendingJoystickReadReportRequest(
 }
 
 static NTSTATUS HandlePendingKeyboardReadReportRequest(
-    _In_ WDFQUEUE pendingReadQueue,
+    _In_ WDFQUEUE queue,
     _In_ KEYBOARD_SUBREPORT* keyboardState,
     _Out_ ULONG* bytesWritten
 )
 {
     NTSTATUS status;
     KEYBOARD_REPORT* outputReportBuffer;
+    PMANUAL_QUEUE_CONTEXT queueContext;
+    WDFREQUEST request;
     size_t outputBytesAvailable = 0;
     size_t reportLen = sizeof(*outputReportBuffer);
-    WDFREQUEST request;
 
     KdPrintEx((T_TRACE, "HandlePendingKeyboardReadReportRequest\n"));
 
-    status = DequeuePendingReadRequest(pendingReadQueue, &request);
+    status = DequeuePendingReadRequest(queue, &request);
     if (!NT_SUCCESS(status))
     {
         return status;
@@ -618,6 +628,9 @@ static NTSTATUS HandlePendingKeyboardReadReportRequest(
 
     *bytesWritten = (ULONG)reportLen;
     WdfRequestCompleteWithInformation(request, status, *bytesWritten);
+
+    queueContext = GetManualQueueContext(queue);
+    WdfTimerStart(queueContext->timer, WDF_REL_TIMEOUT_IN_MS(FEEDER_DISCONNECT_TIMEOUT));
 
     return STATUS_SUCCESS;
 }
@@ -696,7 +709,7 @@ static NTSTATUS GetIndexedString(_In_ WDFREQUEST Request)
 
         status = RequestCopyFromBuffer(
             Request,
-            VJOYUM_DEVICE_STRING, 
+            VJOYUM_DEVICE_STRING,
             sizeof(VJOYUM_DEVICE_STRING));
     }
     return status;
@@ -743,4 +756,35 @@ static NTSTATUS GetString(_In_ WDFREQUEST Request)
 
     status = RequestCopyFromBuffer(Request, string, stringSizeCb);
     return status;
+}
+
+static void EvtTimer(_In_ WDFTIMER timer)
+{
+    NTSTATUS status;
+    WDFQUEUE queue;
+    PMANUAL_QUEUE_CONTEXT queueContext;
+    KEYBOARD_SUBREPORT emptyReport;
+    ULONG bytesWritten;
+
+    KdPrint(("EvtTimerFunc\n"));
+
+    queue = (WDFQUEUE)WdfTimerGetParentObject(timer);
+    queueContext = GetManualQueueContext(queue);
+
+    memset(&emptyReport, 0, sizeof(emptyReport));
+
+    status = HandlePendingKeyboardReadReportRequest(
+        queueContext->deviceContext->pendingReadQueue,
+        &emptyReport,
+        &bytesWritten);
+    if (NT_SUCCESS(status))
+    {
+        queueContext->deviceContext->lastServedReportID = REPORTID_KEYBOARD;
+        WdfTimerStop(queueContext->timer, FALSE);
+    }
+    else
+    {
+        // Schedule another attempt.
+        WdfTimerStart(queueContext->timer, WDF_REL_TIMEOUT_IN_MS(FEEDER_DISCONNECT_TIMEOUT));
+    }
 }
