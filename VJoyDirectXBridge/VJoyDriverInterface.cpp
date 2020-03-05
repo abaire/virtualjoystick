@@ -252,7 +252,285 @@ static inline void ParseGUID(GUID& ret, const char* str)
     ret.Data4[7] = val4_8;
 }
 
+// TODO: Write a static mapping table.
+#define HID_KEY_A 0x04
+#define HID_KEY_1 0x1E
+#define HID_KEY_2 0x1F
+#define HID_KEY_3 0x20
+#define HID_KEY_4 0x21
+#define HID_KEY_5 0x22
+#define HID_KEY_6 0x23
+#define HID_KEY_7 0x24
+#define HID_KEY_8 0x25
+#define HID_KEY_9 0x26
+#define HID_KEY_0 0x27
+#define HID_KEY_SEMICOLON 0x33
+#define HID_KEY_APOSTROPHE 0x34
+#define HID_KEY_GRAVE 0x35
+#define HID_KEY_COMMA 0x36
+#define HID_KEY_DOT 0x37
+#define HID_KEY_SLASH 0x38
+
+#define HID_KEY_MINUS 0x2D
+#define HID_KEY_EQUAL 0x2E
+#define HID_KEY_LEFT_BRACKET 0x2F
+#define HID_KEY_RIGHT_BRACKET 0x30
+#define HID_KEY_BACKSLASH 0x31
+
+#define HID_KEY_ENTER 0x28 // Keyboard Return (ENTER)
+#define HID_KEY_ESC 0x29 // Keyboard ESCAPE
+#define HID_KEY_BACKSPACE 0x2a // Keyboard DELETE (Backspace)
+#define HID_KEY_TAB 0x2b // Keyboard Tab
+#define HID_KEY_SPACE 0x2c // Keyboard Spacebar
+
 static void KeycodeToHIDKeycode(DWORD& keycode)
 {
-    keycode = 0x10;
+    if (keycode >= 'A' && keycode <= 'Z')
+    {
+        keycode = HID_KEY_A + (keycode - 'A');
+        keycode |= (MODIFIER_LEFT_SHIFT << 8);
+        return;
+    }
+
+    if (keycode >= 'a' && keycode <= 'z')
+    {
+        keycode = HID_KEY_A + (keycode - 'A');
+        return;
+    }
+    
+    if (keycode == '!')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_1;
+        return;
+    }
+
+    if (keycode == '@')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_2;
+        return;
+    }
+
+    if (keycode == '#')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_3;
+        return;
+    }
+
+    if (keycode == '$')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_4;
+        return;
+    }
+
+    if (keycode == '%')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_5;
+        return;
+    }
+
+    if (keycode == '^')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_6;
+        return;
+    }
+
+    if (keycode == '&')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_7;
+        return;
+    }
+
+    if (keycode == '*')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_8;
+        return;
+    }
+
+    if (keycode == '(')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_9;
+        return;
+    }
+
+    if (keycode == ')')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_0;
+        return;
+    }
+
+    if (keycode == '0')
+    {
+        keycode = HID_KEY_0;
+        return;
+    }
+
+    if (keycode >= '1' && keycode <= '9')
+    {
+        keycode = HID_KEY_1 + (keycode - '1');
+        return;
+    }
+
+    if (keycode == ':')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_SEMICOLON;
+        return;
+    }
+
+    if (keycode == ';')
+    {
+        keycode = HID_KEY_SEMICOLON;
+        return;
+    }
+
+    if (keycode == '"')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_APOSTROPHE;
+        return;
+    }
+
+    if (keycode == '\'')
+    {
+        keycode = HID_KEY_APOSTROPHE;
+        return;
+    }
+
+    if (keycode == '~')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_GRAVE;
+        return;
+    }
+
+    if (keycode == '`')
+    {
+        keycode = HID_KEY_GRAVE;
+        return;
+    }
+
+    if (keycode == '<')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_COMMA;
+        return;
+    }
+
+    if (keycode == ',')
+    {
+        keycode = HID_KEY_COMMA;
+        return;
+    }
+
+    if (keycode == '>')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_DOT;
+        return;
+    }
+
+    if (keycode == '.')
+    {
+        keycode = HID_KEY_DOT;
+        return;
+    }
+
+    if (keycode == '?')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_SLASH;
+        return;
+    }
+
+    if (keycode == '/')
+    {
+        keycode = HID_KEY_SLASH;
+        return;
+    }
+
+    if (keycode == '{')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_LEFT_BRACKET;
+        return;
+    }
+
+    if (keycode == '[')
+    {
+        keycode = HID_KEY_LEFT_BRACKET;
+        return;
+    }
+
+    if (keycode == '}')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_RIGHT_BRACKET;
+        return;
+    }
+
+    if (keycode == ']')
+    {
+        keycode = HID_KEY_RIGHT_BRACKET;
+        return;
+    }
+
+    if (keycode == '\\')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_BACKSLASH;
+        return;
+    }
+
+    if (keycode == '|')
+    {
+        keycode = HID_KEY_BACKSLASH;
+        return;
+    }
+
+    if (keycode == '_')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_MINUS;
+        return;
+    }
+
+    if (keycode == '-')
+    {
+        keycode = HID_KEY_MINUS;
+        return;
+    }
+
+    if (keycode == '+')
+    {
+        keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_EQUAL;
+        return;
+    }
+
+    if (keycode == '=')
+    {
+        keycode = HID_KEY_EQUAL;
+        return;
+    }
+
+    if (keycode == '\n')
+    {
+        keycode = HID_KEY_ENTER;
+        return;
+    }
+
+    if (keycode == 0x1B)
+    {
+        keycode = HID_KEY_ESC;
+        return;
+    }
+
+    if (keycode == 0x08)
+    {
+        keycode = HID_KEY_BACKSPACE;
+        return;
+    }
+
+    if (keycode == '\t')
+    {
+        keycode = HID_KEY_TAB;
+        return;
+    }
+
+    if (keycode == ' ')
+    {
+        keycode = HID_KEY_SPACE;
+        return;
+    }
+
+    keycode = 0;
 }

@@ -129,7 +129,10 @@ static __inline void SetButton(VENDOR_DEVICE_PACKET& packet, UINT32 index, BOOL 
 static __inline void AddKeyDown(VENDOR_DEVICE_PACKET& packet, UINT32 keycode)
 {
     UINT32 index = 0;
-    UINT8 keycodeByte = static_cast<UINT8>(keycode);
+    UINT8 modifierByte = (keycode >> 8) & 0xFF;
+    UINT8 keycodeByte = keycode & 0xFF;
+
+    packet.keyboard.modifierKeys |= modifierByte;
 
     for (; index < sizeof(packet.keyboard.keycodes); ++index)
     {
@@ -280,7 +283,10 @@ inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(VENDOR_DEVICE_PACKET& p
             }
 
         case MappingType::mt_key:
-            ADDKEYDOWN(it->destIndex);
+            if (m_state.rgbButtons[it->srcIndex] == 0x80)
+            {
+                ADDKEYDOWN(it->destIndex);
+            }
             break;
         }
     }
