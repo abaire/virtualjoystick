@@ -5,10 +5,14 @@
 
 #include "VJoyDriverInterface.h"
 
-#define MAX_ACQUIRE_RETRIES 512  //!< Sanity limit on the maximum number of attempts to aquire the physical device
+//! Sanity limit on the maximum number of attempts to acquire the physical device
+#define MAX_ACQUIRE_RETRIES 512  
 
 #define AXIS_MIN  -32767
 #define AXIS_MAX  32767
+
+//! Keycode to set if too many virtual keys are pressed at once.
+#define HID_KEYBOARD_ERROR_ROLL_OVER ((UINT8)0x01)
 
 // DirectInput reports POV values between 0 and 31500 (and -1 as a NULL val)
 // However the driver expects a value between 0 and 7 (or -1 for NULL)
@@ -16,7 +20,9 @@
 //  to support any values > 31500, so it adds no value.
 #define MAP_RANGE( val )  (INT8)(val > 0 ? val / 4500 : val)
 
-#define SETBUTTON( offset, val ) SetButton( packet, offset, val )
+#define SETBUTTON( offset, val ) SetButton(packet, offset, val)
+
+#define ADDKEYDOWN( keycode ) AddKeyDown(packet, keycode)
 
 
 //! \class  CJoystickDevice
@@ -105,9 +111,6 @@ protected:
 };
 
 
-//-------------------------------------------------------------------------------------------
-//  SetButton
-//-------------------------------------------------------------------------------------------
 static __inline void SetButton(VENDOR_DEVICE_PACKET& packet, UINT32 index, BOOL val)
 {
     UINT32 offset = index >> 3;
@@ -121,6 +124,28 @@ static __inline void SetButton(VENDOR_DEVICE_PACKET& packet, UINT32 index, BOOL 
     {
         packet.joystick.Button[offset] &= ~bit;
     }
+}
+
+static __inline void AddKeyDown(VENDOR_DEVICE_PACKET& packet, UINT32 keycode)
+{
+    UINT32 index = 0;
+    UINT8 keycodeByte = static_cast<UINT8>(keycode);
+
+    for (; index < sizeof(packet.keyboard.keycodes); ++index)
+    {
+        if (packet.keyboard.keycodes[index] == keycodeByte)
+        {
+            return;
+        }
+
+        if (!packet.keyboard.keycodes[index])
+        {
+            packet.keyboard.keycodes[index] = keycodeByte;
+            return;
+        }
+    }
+
+    memset(packet.keyboard.keycodes, HID_KEYBOARD_ERROR_ROLL_OVER, sizeof(packet.keyboard.keycodes));
 }
 
 
@@ -166,9 +191,6 @@ inline void SetReportAxis(VENDOR_DEVICE_PACKET& report, AxisIndex axis, INT16 va
     }
 }
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
 inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(VENDOR_DEVICE_PACKET& packet)
 {
     if (!PollPhysicalStick())
@@ -182,7 +204,7 @@ inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(VENDOR_DEVICE_PACKET& p
     DeviceMappingVector::iterator itEnd = m_deviceMapping.end();
     for (; it != itEnd; ++it)
     {
-        switch (it->destBlock)
+        switch (it->destType)
         {
         case MappingType::mt_axis:
             {
@@ -206,7 +228,7 @@ inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(VENDOR_DEVICE_PACKET& p
 
         case MappingType::mt_button:
             {
-                switch (it->srcBlock)
+                switch (it->srcType)
                 {
                 case MappingType::mt_button:
                     SETBUTTON(it->destIndex, (m_state.rgbButtons[it->srcIndex] == 0x80));
@@ -256,6 +278,10 @@ inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(VENDOR_DEVICE_PACKET& p
                     break;
                 }
             }
+
+        case MappingType::mt_key:
+            ADDKEYDOWN(it->destIndex);
+            break;
         }
     }
 

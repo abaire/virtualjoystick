@@ -19,6 +19,7 @@ typedef std::map<HANDLE, CDriverInterface> HandleMap;
 static HandleMap g_driverHandles;
 
 static inline void ParseGUID(GUID& ret, const char* str);
+static void KeycodeToHIDKeycode(DWORD& keycode);
 
 
 //= F U N C T I O N S =========================================================================
@@ -172,10 +173,16 @@ BOOL SetDeviceMapping(HANDLE attachID, const char* deviceGUIDStr, const DeviceMa
     for (size_t i = 0; i < mappingCount; ++i)
     {
         auto mapping = *mappings++;
-        if (mapping.destIndex != UNMAPPED_INDEX)
+        if (mapping.destIndex == UNMAPPED_INDEX)
         {
-            mappingVector.push_back(mapping);
+            continue;
         }
+
+        // Map keys to HID device codes.
+        if (mapping.destType == MappingType::mt_key) {
+            KeycodeToHIDKeycode(mapping.destIndex);
+        }
+        mappingVector.push_back(mapping);
     }
     GUID guid;
     ParseGUID(guid, deviceGUIDStr);
@@ -243,4 +250,9 @@ static inline void ParseGUID(GUID& ret, const char* str)
     ret.Data4[5] = val4_6;
     ret.Data4[6] = val4_7;
     ret.Data4[7] = val4_8;
+}
+
+static void KeycodeToHIDKeycode(DWORD& keycode)
+{
+    keycode = 0x10;
 }

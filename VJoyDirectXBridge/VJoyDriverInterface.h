@@ -35,7 +35,8 @@ enum class MappingType
 {
     mt_axis = 0,
     mt_pov,
-    mt_button
+    mt_button,
+    mt_key
 };
 
 //! \enum   AxisIndex
@@ -60,10 +61,10 @@ enum class AxisIndex
 //! \brief  Maps a specific dinput state variable to an output slot in the virtual joystick
 typedef struct _DeviceMapping
 {
-    MappingType destBlock; //!< The type of the target virtual joystick state
+    MappingType destType; //!< The type of the target virtual joystick state
     DWORD destIndex; //!< The index of the target virtual joystick state
 
-    MappingType srcBlock; //!< The type of the source state
+    MappingType srcType; //!< The type of the source state
     DWORD srcIndex; //!< The index of the source joystick state
 
     BOOL invert; //!< Whether or not we should logically invert the physical state when injecting the virtual device

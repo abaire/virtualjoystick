@@ -13,9 +13,10 @@ namespace JoystickUsermodeDriver
 
         public enum MappingType
         {
-            axis = 0,
-            pov,
-            button
+            Axis = 0,
+            POV,
+            Button,
+            Key
         }
 
         public enum AxisIndex
@@ -55,14 +56,19 @@ namespace JoystickUsermodeDriver
             {
                 get
                 {
-                    if (_virtualDeviceType == MappingType.axis)
+                    if (_virtualDeviceType == MappingType.Axis)
                     {
                         return VirtualDeviceIndexName;
                     }
 
-                    if (_sourceType == MappingType.pov && _virtualDeviceType == MappingType.button)
+                    if (_sourceType == MappingType.POV && _virtualDeviceType == MappingType.Button)
                     {
                         return $"Buttons {VirtualDeviceIndex + 1} - {VirtualDeviceIndex + 4}";
+                    }
+
+                    if (_virtualDeviceType == MappingType.Key)
+                    {
+                        return $"{(char) (VirtualDeviceIndex & 0xFF)}";
                     }
 
                     return $"{VirtualDeviceType} {VirtualDeviceIndexName}";
@@ -77,7 +83,7 @@ namespace JoystickUsermodeDriver
             {
                 get
                 {
-                    if (_sourceType == MappingType.axis)
+                    if (_sourceType == MappingType.Axis)
                     {
                         return SourceIndexName;
                     }
@@ -94,9 +100,9 @@ namespace JoystickUsermodeDriver
 
             private string IndexName(MappingType type, UInt32 index)
             {
-                if (type == MappingType.axis)
+                if (type == MappingType.Axis)
                 {
-                    AxisIndex axisIndex = (AxisIndex)index;
+                    AxisIndex axisIndex = (AxisIndex) index;
                     return axisIndex.ToString();
                 }
 
@@ -173,7 +179,7 @@ namespace JoystickUsermodeDriver
             {
                 var value = k.GetValue(valueName, 0);
 
-                if (mappingType == MappingType.axis)
+                if (mappingType == MappingType.Axis)
                 {
                     try
                     {
@@ -183,7 +189,7 @@ namespace JoystickUsermodeDriver
                             var axisIndex = (AxisIndex) Enum.Parse(typeof(AxisIndex), value.ToString());
                             return (UInt32) axisIndex;
                         }
-                    } 
+                    }
                     catch (System.IO.IOException)
                     {
                         // Return a default mapping.
@@ -216,7 +222,7 @@ namespace JoystickUsermodeDriver
 
             private static void WriteDeviceIndex(RegistryKey k, string valueName, UInt32 index, MappingType type)
             {
-                if (type != MappingType.axis)
+                if (type != MappingType.Axis)
                 {
                     k.SetValue(valueName, index, RegistryValueKind.DWord);
                 }

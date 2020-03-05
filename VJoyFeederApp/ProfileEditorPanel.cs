@@ -88,21 +88,21 @@ namespace JoystickUsermodeDriver
             var ret = new ComboBox();
             switch (type)
             {
-                case VJoyDriverInterface.MappingType.axis:
+                case VJoyDriverInterface.MappingType.Axis:
                     foreach (var item in Enum.GetNames(typeof(VJoyDriverInterface.AxisIndex)))
                     {
                         ret.Items.Add(item);
                     }
                     break;
 
-                case VJoyDriverInterface.MappingType.button:
+                case VJoyDriverInterface.MappingType.Button:
                     for (var i = 0; i < VJoyDriverInterface.MaxVirtualButtons; ++i)
                     {
                         ret.Items.Add($"Button {i + 1}");
                     }
                     break;
 
-                case VJoyDriverInterface.MappingType.pov:
+                case VJoyDriverInterface.MappingType.POV:
                     for (var i = 0; i < VJoyDriverInterface.MaxVirtualPOVs; ++i)
                     {
                         ret.Items.Add($"POV {i + 1}");

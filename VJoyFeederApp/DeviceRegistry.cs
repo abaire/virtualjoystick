@@ -145,13 +145,13 @@ namespace JoystickUsermodeDriver
                         var data = new Tuple<string, UInt32>(name, objectIndex);
                         switch (deviceType)
                         {
-                            case VJoyDriverInterface.MappingType.axis:
+                            case VJoyDriverInterface.MappingType.Axis:
                                 axes.Add(data);
                                 break;
-                            case VJoyDriverInterface.MappingType.button:
+                            case VJoyDriverInterface.MappingType.Button:
                                 buttons.Add(data);
                                 break;
-                            case VJoyDriverInterface.MappingType.pov:
+                            case VJoyDriverInterface.MappingType.POV:
                                 povs.Add(data);
                                 break;
                         }
@@ -169,7 +169,7 @@ namespace JoystickUsermodeDriver
                     foreach (var item in axes)
                     {
                         var mapping = new VJoyDriverInterface.DeviceMapping(
-                            VJoyDriverInterface.MappingType.axis,
+                            VJoyDriverInterface.MappingType.Axis,
                             item.Item2);
                         var subkeyName = $"Axis_{item.Item2}  {item.Item1}";
                         WriteEnumeratedDeviceMapping(subkeyName, deviceKey, mapping, item.Item1);
@@ -178,7 +178,7 @@ namespace JoystickUsermodeDriver
                     foreach (var item in buttons)
                     {
                         var mapping = new VJoyDriverInterface.DeviceMapping(
-                            VJoyDriverInterface.MappingType.button,
+                            VJoyDriverInterface.MappingType.Button,
                             item.Item2);
                         var subkeyName = $"Button_{item.Item2}  {item.Item1}";
                         WriteEnumeratedDeviceMapping(subkeyName, deviceKey, mapping, item.Item1);
@@ -187,7 +187,7 @@ namespace JoystickUsermodeDriver
                     foreach (var item in povs)
                     {
                         var mapping = new VJoyDriverInterface.DeviceMapping(
-                            VJoyDriverInterface.MappingType.pov,
+                            VJoyDriverInterface.MappingType.POV,
                             item.Item2);
                         var subkeyName = $"POV_{item.Item2}  {item.Item1}";
                         WriteEnumeratedDeviceMapping(subkeyName, deviceKey, mapping, item.Item1);
