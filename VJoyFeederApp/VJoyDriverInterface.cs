@@ -21,7 +21,7 @@ namespace JoystickUsermodeDriver
 
         public enum AxisIndex
         {
-            axis_none = 0xFFFF,
+            axis_none = (int)UNMAPPED_INDEX,
             axis_x = 0,
             axis_y,
             axis_throttle,
@@ -34,6 +34,66 @@ namespace JoystickUsermodeDriver
             // Additional axes are not available in DIJOYSTATE2.
             axis_rudder,
         }
+
+        // Keep in sync with VJoyDriverInterface.h
+        private const UInt32 UNMAPPED_INDEX = 0xFFFF;
+
+        private const Int32 MODIFIER_LEFT_CTRL = (1 << 0);
+        private const Int32 MODIFIER_LEFT_SHIFT = (1 << 1);
+        private const Int32 MODIFIER_LEFT_ALT = (1 << 2);
+        private const Int32 MODIFIER_LEFT_GUI = (1 << 3);
+        private const Int32 MODIFIER_RIGHT_CTRL = (1 << 4);
+        private const Int32 MODIFIER_RIGHT_SHIFT = (1 << 5);
+        private const Int32 MODIFIER_RIGHT_ALT = (1 << 6);
+        private const Int32 MODIFIER_RIGHT_GUI = (1 << 7);
+
+        public enum Keycode
+        {
+            Escape = 0x1B,
+            Enter = (int)'\n',
+            Backspace = 0x08,
+            Tab = (int)'\t',
+            Space = (int)' ',
+
+            F1 = 0x013A,
+            F2 = 0x013B,
+            F3 = 0x013C,
+            F4 = 0x013D,
+            F5 = 0x013E,
+            F6 = 0x013F,
+            F7 = 0x0140,
+            F8 = 0x0141,
+            F9 = 0x0142,
+            F10 = 0x0143,
+            F11 = 0x0144,
+            F12 = 0x0145,
+
+            RightArrow = 0x014F,
+            LeftArrow = 0x0150,
+            DownArrow = 0x0151,
+            UpArrow = 0x0152,
+
+            KEYPAD_1 = 0x0159,
+            KEYPAD_2 = 0x015A,
+            KEYPAD_3 = 0x015B,
+            KEYPAD_4 = 0x015C,
+            KEYPAD_5 = 0x015D,
+            KEYPAD_6 = 0x015E,
+            KEYPAD_7 = 0x015F,
+            KEYPAD_8 = 0x0160,
+            KEYPAD_9 = 0x0161,
+            KEYPAD_0 = 0x0162,
+
+            LEFT_CTRL = (MODIFIER_LEFT_CTRL << 16),
+            LEFT_SHIFT = (MODIFIER_LEFT_SHIFT << 16),
+            LEFT_ALT = (MODIFIER_LEFT_ALT << 16),
+            LEFT_GUI = (MODIFIER_LEFT_GUI << 16),
+            RIGHT_CTRL = (MODIFIER_RIGHT_CTRL << 16),
+            RIGHT_SHIFT = (MODIFIER_RIGHT_SHIFT << 16),
+            RIGHT_ALT = (MODIFIER_RIGHT_ALT << 16),
+            RIGHT_GUI = (MODIFIER_RIGHT_GUI << 16),
+        }
+
 
         [StructLayout(LayoutKind.Sequential)]
         public struct DeviceMapping
@@ -193,7 +253,38 @@ namespace JoystickUsermodeDriver
                     catch (System.IO.IOException)
                     {
                         // Return a default mapping.
-                        return 0;
+                        return (UInt32)AxisIndex.axis_none;
+                    }
+                }
+
+                if (mappingType == MappingType.Key)
+                {
+                    try
+                    {
+                        var kind = k.GetValueKind(valueName);
+                        if (kind == RegistryValueKind.String)
+                        {
+                            UInt32 keycode = 0x04;
+                            var stringVal = value.ToString();
+                            // Single char strings are assumed to be printable and mapped to ASCII.
+                            if (stringVal.Length == 1)
+                            {
+                                keycode = (UInt32)stringVal[0];
+                                if (keycode < 0x80)
+                                {
+                                    return keycode;
+                                }
+
+                                return 0x04;
+                            }
+                            keycode = (UInt32)(Keycode)Enum.Parse(typeof(Keycode), value.ToString());
+                            return (UInt32)keycode;
+                        }
+                    }
+                    catch (System.IO.IOException)
+                    {
+                        // Return a default mapping.
+                        return 0x04;
                     }
                 }
 

@@ -169,7 +169,7 @@ BOOL SetDeviceMapping(HANDLE attachID, const char* deviceGUIDStr, const DeviceMa
     if (it == g_driverHandles.end())
         return FALSE;
 
-    CJoystickDevice::DeviceMappingVector mappingVector(mappingCount);
+    CJoystickDevice::DeviceMappingVector mappingVector;
     for (size_t i = 0; i < mappingCount; ++i)
     {
         auto mapping = *mappings++;
