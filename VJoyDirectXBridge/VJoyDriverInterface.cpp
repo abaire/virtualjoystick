@@ -253,6 +253,8 @@ static inline void ParseGUID(GUID& ret, const char* str)
 }
 
 // TODO: Write a static mapping table.
+#define REMAP(base_hid, base_keycode) (base_hid + (keycode - base_keycode))
+
 #define HID_KEY_A 0x04
 #define HID_KEY_1 0x1E
 #define HID_KEY_2 0x1F
@@ -283,21 +285,21 @@ static inline void ParseGUID(GUID& ret, const char* str)
 #define HID_KEY_TAB 0x2b // Keyboard Tab
 #define HID_KEY_SPACE 0x2c // Keyboard Spacebar
 
-static void KeycodeToHIDKeycode(DWORD& keycode)
+static __inline void ASCIIKeycodeToHIDKeycode(DWORD& keycode)
 {
     if (keycode >= 'A' && keycode <= 'Z')
     {
-        keycode = HID_KEY_A + (keycode - 'A');
+        keycode = REMAP(HID_KEY_A, 'A');
         keycode |= (MODIFIER_LEFT_SHIFT << 8);
         return;
     }
 
     if (keycode >= 'a' && keycode <= 'z')
     {
-        keycode = HID_KEY_A + (keycode - 'A');
+        keycode = REMAP(HID_KEY_A, 'a');
         return;
     }
-    
+
     if (keycode == '!')
     {
         keycode = (MODIFIER_LEFT_SHIFT << 8) + HID_KEY_1;
@@ -366,7 +368,7 @@ static void KeycodeToHIDKeycode(DWORD& keycode)
 
     if (keycode >= '1' && keycode <= '9')
     {
-        keycode = HID_KEY_1 + (keycode - '1');
+        keycode = REMAP(HID_KEY_1, '1');
         return;
     }
 
@@ -529,6 +531,96 @@ static void KeycodeToHIDKeycode(DWORD& keycode)
     if (keycode == ' ')
     {
         keycode = HID_KEY_SPACE;
+        return;
+    }
+}
+
+#define HID_KEY_F1 0x3A
+
+#define HID_KEY_RIGHT_ARROW 0x4F
+
+#define HID_KEY_LEFT_CTRL 0xE0
+#define HID_KEY_LEFT_SHIFT 0xE1
+#define HID_KEY_LEFT_ALT 0xE2
+#define HID_KEY_LEFT_GUI 0xE3
+#define HID_KEY_RIGHT_CTRL 0xE4
+#define HID_KEY_RIGHT_SHIFT 0xE5
+#define HID_KEY_RIGHT_ALT 0xE6
+#define HID_KEY_RIGHT_GUI 0xE7
+
+#define HID_KEY_KEYPAD_1 0x59
+
+static void KeycodeToHIDKeycode(DWORD& keycode)
+{
+    if (keycode < 0x80)
+    {
+        ASCIIKeycodeToHIDKeycode(keycode);
+        return;
+    }
+
+    if (keycode >= KEYCODE_F1 && keycode <= KEYCODE_F12)
+    {
+        keycode = REMAP(HID_KEY_F1, KEYCODE_F1);
+        return;
+    }
+
+    if (keycode >= KEYCODE_RIGHT_ARROW && keycode <= KEYCODE_UP_ARROW)
+    {
+        keycode = REMAP(HID_KEY_RIGHT_ARROW, KEYCODE_RIGHT_ARROW);
+        return;
+    }
+
+    if (keycode >= KEYCODE_KEYPAD_1 && keycode <= KEYCODE_KEYPAD_0)
+    {
+        keycode = REMAP(HID_KEY_KEYPAD_1, KEYCODE_KEYPAD_1);
+        return;
+    }
+
+    if (keycode == KEYCODE_LEFT_CTRL)
+    {
+        keycode = HID_KEY_LEFT_CTRL;
+        return;
+    }
+
+    if (keycode == KEYCODE_LEFT_SHIFT)
+    {
+        keycode = HID_KEY_LEFT_SHIFT;
+        return;
+    }
+
+    if (keycode == KEYCODE_LEFT_ALT)
+    {
+        keycode = HID_KEY_LEFT_ALT;
+        return;
+    }
+
+    if (keycode == KEYCODE_LEFT_GUI)
+    {
+        keycode = HID_KEY_LEFT_GUI;
+        return;
+    }
+
+    if (keycode == KEYCODE_RIGHT_CTRL)
+    {
+        keycode = HID_KEY_RIGHT_CTRL;
+        return;
+    }
+
+    if (keycode == KEYCODE_RIGHT_SHIFT)
+    {
+        keycode = HID_KEY_RIGHT_SHIFT;
+        return;
+    }
+
+    if (keycode == KEYCODE_RIGHT_ALT)
+    {
+        keycode = HID_KEY_RIGHT_ALT;
+        return;
+    }
+
+    if (keycode == KEYCODE_RIGHT_GUI)
+    {
+        keycode = HID_KEY_RIGHT_GUI;
         return;
     }
 
