@@ -6,7 +6,7 @@
 #include "VJoyDriverInterface.h"
 
 //! Sanity limit on the maximum number of attempts to acquire the physical device
-#define MAX_ACQUIRE_RETRIES 512  
+#define MAX_ACQUIRE_RETRIES 512
 
 #define AXIS_MIN  -32767
 #define AXIS_MAX  32767
@@ -33,18 +33,29 @@ public:
     typedef std::vector<DeviceMapping> DeviceMappingVector;
 
     CJoystickDevice(LPDIRECTINPUT8, const DIDEVICEINSTANCE& device, const DeviceMappingVector& deviceMapping);
+    CJoystickDevice(CJoystickDevice&&) noexcept;
 
-    BOOL Acquire();
-
-    inline void Release(void)
+    ~CJoystickDevice()
     {
-        if (m_inputDevice) m_inputDevice->Release();
+        Release();
+    }
+
+    CJoystickDevice& operator=(CJoystickDevice&&) noexcept;
+
+    HRESULT Acquire();
+    void Unacquire();
+
+    void Release(void)
+    {
+        if (m_inputDevice)
+            m_inputDevice->Release();
         m_inputDevice = NULL;
     }
 
-    inline BOOL SetEventNotification(HANDLE h)
+    BOOL SetEventNotification(HANDLE h)
     {
-        if (m_inputDevice) {
+        if (m_inputDevice)
+        {
             auto ret = m_inputDevice->SetEventNotification(h);
             return ret == DI_OK;
         }
@@ -59,8 +70,7 @@ public:
     //!           or inconsistent state!
     inline BOOL GetVirtualStateUpdatePacket(VENDOR_DEVICE_PACKET& packet);
 
-
-    inline BOOL IsPolled() const { return m_isPolled;  }
+    BOOL IsPolled() const { return m_isPolled; }
 
 protected:
 
@@ -99,7 +109,7 @@ protected:
 protected:
     DIDEVICEINSTANCE m_deviceInstance; //!< Information about the physical device being wrapped by this instance
     LPDIRECTINPUTDEVICE8 m_inputDevice; //!< dinput handle to the physical device being wrapped by this instance
-    BOOL m_isPolled;  //!< TRUE if the device must be polled rather than interrupt driven.
+    BOOL m_isPolled; //!< TRUE if the device must be polled rather than interrupt driven.
 
     DIJOYSTATE2 m_state; //!< The current state of the physical joystick represented by this instance
 

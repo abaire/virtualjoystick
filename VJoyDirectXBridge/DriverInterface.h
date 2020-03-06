@@ -9,9 +9,10 @@
 
 //= I N C L U D E S ===========================================================================
 #include <dinput.h>
+#include <list>
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
 #include "JoystickDevice.h"
 
@@ -52,7 +53,7 @@ public:
     typedef std::vector<DeviceObjectInfo> DeviceObjectInfoVector;
 
 protected:
-    typedef std::vector<CJoystickDevice> DeviceVector;
+    typedef std::list<CJoystickDevice> DeviceVector;
 
 public:
 
@@ -64,19 +65,19 @@ public:
 
     CDriverInterface& operator=(CDriverInterface&&) noexcept;
 
-    inline BOOL AddDeviceMapping(const GUID& guid, const CJoystickDevice::DeviceMappingVector& mapping)
+    BOOL AddDeviceMapping(const GUID& guid, const CJoystickDevice::DeviceMappingVector& mapping)
     {
         m_deviceGUIDMapping[guid] = mapping;
         return TRUE;
     }
 
-    inline BOOL SetDeviceMapping(const DeviceIDMapping& deviceMap)
+    BOOL SetDeviceMapping(const DeviceIDMapping& deviceMap)
     {
         m_deviceGUIDMapping = deviceMap;
         return TRUE;
     }
 
-    inline BOOL ClearDeviceMappings()
+    BOOL ClearDeviceMappings()
     {
         m_deviceGUIDMapping.clear();
         return TRUE;
@@ -102,8 +103,8 @@ public:
     BOOL RunUpdateThread(void);
     BOOL ExitUpdateThread(void);
 
-    inline HANDLE& DriverHandle(void) { return m_driverHandle; }
-    inline const HANDLE& DriverHandle(void) const { return m_driverHandle; }
+    HANDLE& DriverHandle(void) { return m_driverHandle; }
+    const HANDLE& DriverHandle(void) const { return m_driverHandle; }
 
     void CloseDriverHandle(void);
     void CloseInterruptEvent(void);
@@ -118,6 +119,7 @@ protected:
 #endif
 
     BOOL AcquireDevices(void);
+    void UnacquireDevices(void);
     void ReleaseDevices(void);
 
     BOOL SetNotificationOnDevices(HANDLE eventHandle);

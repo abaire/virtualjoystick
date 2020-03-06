@@ -87,8 +87,7 @@ CDriverInterface& CDriverInterface::operator=(CDriverInterface&& o) noexcept
     m_updateThreadRunning = std::move(o.m_updateThreadRunning);
     m_interruptEvent = std::exchange(o.m_interruptEvent, INVALID_HANDLE_VALUE);
     m_updateLoopDelay = std::move(o.m_updateLoopDelay);
-    m_pDI = std::move(o.m_pDI);
-    o.m_pDI = NULL;
+    m_pDI = std::exchange(o.m_pDI, (LPDIRECTINPUT8)NULL);
     m_inputDeviceVector = std::move(o.m_inputDeviceVector);
     m_deviceGUIDMapping = std::move(o.m_deviceGUIDMapping);
 
@@ -161,12 +160,23 @@ BOOL CDriverInterface::AcquireDevices(void)
     DeviceVector::iterator itEnd = m_inputDeviceVector.end();
     for (; it != itEnd; ++it)
     {
-        if (!it->Acquire())
+        HRESULT result = it->Acquire();
+        if (FAILED(result))
         {
             return FALSE;
         }
     }
     return TRUE;
+}
+
+void CDriverInterface::UnacquireDevices()
+{
+    DeviceVector::iterator it = m_inputDeviceVector.begin();
+    DeviceVector::iterator itEnd = m_inputDeviceVector.end();
+    for (; it != itEnd; ++it)
+    {
+        it->Unacquire();
+    }
 }
 
 void CDriverInterface::ReleaseDevices()
@@ -237,7 +247,7 @@ void CDriverInterface::RunPollingLoop(void)
 {
     if (!AcquireDevices())
     {
-        ReleaseDevices();
+        UnacquireDevices();
         return;
     }
 
@@ -284,7 +294,7 @@ void CDriverInterface::RunPollingLoop(void)
         Sleep(m_updateLoopDelay);
     }
 
-    ReleaseDevices();
+    UnacquireDevices();
 }
 
 #if 0
@@ -372,7 +382,7 @@ void CDriverInterface::RunInterruptLoop(void)
             numFailures = 0;
     }
 
-    ReleaseDevices();
+    UnacquireDevices();
     SetNotificationOnDevices(NULL);
 }
 #endif
@@ -407,6 +417,14 @@ BOOL CDriverInterface::GetDeviceInfo(
     buttons.clear();
     povs.clear();
 
+    auto callback = [](const DIDEVICEOBJECTINSTANCE* inst, VOID* pContext)
+    {
+        DeviceObjectInfoVector* info = static_cast<DeviceObjectInfoVector*>(pContext);
+        UINT32 instance = DIDFT_GETINSTANCE(inst->dwType);
+        info->push_back(DeviceObjectInfo(inst->tszName, instance));
+        return DIENUM_CONTINUE;
+    };
+
     BOOL releaseAfterOp = FALSE;
     BOOL ret = TRUE;
     if (!m_pDI)
@@ -433,14 +451,6 @@ BOOL CDriverInterface::GetDeviceInfo(
     auto numAxes = capabilities.dwAxes;
     auto numButtons = capabilities.dwButtons;
     auto numPOVs = capabilities.dwPOVs;
-
-    auto callback = [](const DIDEVICEOBJECTINSTANCE* inst, VOID* pContext)
-    {
-        DeviceObjectInfoVector* info = static_cast<DeviceObjectInfoVector*>(pContext);
-        UINT32 instance = DIDFT_GETINSTANCE(inst->dwType);
-        info->push_back(DeviceObjectInfo(inst->tszName, instance));
-        return DIENUM_CONTINUE;
-    };
 
     if (numAxes && FAILED(device->EnumObjects(callback, &axes, DIDFT_AXIS)))
     {
@@ -506,9 +516,7 @@ BOOL CDriverInterface::EnumJoysticksCB(const DIDEVICEINSTANCE* inst)
     {
         return DIENUM_CONTINUE;
     }
-
-    CJoystickDevice dev(m_pDI, *inst, it->second);
-    m_inputDeviceVector.push_back(dev);
+    m_inputDeviceVector.emplace_back(m_pDI, *inst, it->second);
 
     return DIENUM_CONTINUE;
 }

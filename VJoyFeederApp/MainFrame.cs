@@ -41,6 +41,10 @@ namespace JoystickUsermodeDriver
 
             RefreshDisplay();
             BeginFeedingDriver();
+
+#if DEBUG
+            MenuShow_Click(null, null);
+#endif
         }
 
         private void PopulateProfileList()

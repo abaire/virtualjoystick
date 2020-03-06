@@ -24,8 +24,13 @@ CJoystickDevice::CJoystickDevice(
     m_deviceInstance(device)
     , m_deviceMapping(deviceMapping)
     , m_state()
+    , m_isPolled(FALSE)
 {
     HRESULT hr = di->CreateDevice(m_deviceInstance.guidInstance, &m_inputDevice, NULL);
+    if (FAILED(hr))
+    {
+        m_inputDevice = NULL;
+    }
 
     if (m_inputDevice)
     {
@@ -52,32 +57,53 @@ CJoystickDevice::CJoystickDevice(
     }
 }
 
-//-------------------------------------------------------------------------------------------
-//	
-//-------------------------------------------------------------------------------------------
-BOOL CJoystickDevice::Acquire(void)
+CJoystickDevice::CJoystickDevice(CJoystickDevice&& o) noexcept
 {
-    if (!m_inputDevice || FAILED(m_inputDevice->SetDataFormat( &c_dfDIJoystick2 )))
+    *this = std::move(o);
+}
+
+CJoystickDevice& CJoystickDevice::operator=(CJoystickDevice&& o) noexcept
+{
+    if (&o == this) { return *this; }
+
+    m_deviceInstance = std::move(o.m_deviceInstance);
+    m_inputDevice = std::exchange(o.m_inputDevice, (LPDIRECTINPUTDEVICE8)NULL);
+    m_isPolled = o.m_isPolled;
+    m_state = o.m_state;
+    m_deviceMapping = std::move(o.m_deviceMapping);
+
+    return *this;
+}
+
+HRESULT CJoystickDevice::Acquire(void)
+{
+    if (!m_inputDevice)
     {
-        //PRINTMSG(( "Failed to set stick data format!\n" ));
-        return FALSE;
+        return E_HANDLE;
+    }
+
+    HRESULT result = m_inputDevice->SetDataFormat(&c_dfDIJoystick2);
+    if (FAILED(result))
+    {
+        return result;
     }
 
     // Enumerate the joystick objects and set the min/max values property for any discovered axes.
-    if (FAILED(m_inputDevice->EnumObjects(
+    result = m_inputDevice->EnumObjects(
         EnumObjectsCallback,
         (VOID*)this,
-        DIDFT_ALL )))
-    {
-        return FALSE;
-    }
-
-    return TRUE;
+        DIDFT_ALL);
+    return result;
 }
 
-//-------------------------------------------------------------------------------------------
-//	EnumObjectsCallback
-//-------------------------------------------------------------------------------------------
+void CJoystickDevice::Unacquire(void)
+{
+    if (m_inputDevice)
+    {
+        m_inputDevice->Unacquire();
+    }
+}
+
 BOOL CJoystickDevice::EnumObjectsCallback(const DIDEVICEOBJECTINSTANCE* obj)
 {
     // For axes that are returned, set the DIPROP_RANGE property for the
