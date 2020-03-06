@@ -18,37 +18,11 @@ Environment:
 
 #include "util.h"
 
-//
-// HID minidriver IOCTL uses HID_XFER_PACKET which contains an embedded pointer.
-//
-//   typedef struct _HID_XFER_PACKET {
-//     PUCHAR reportBuffer;
-//     ULONG  reportBufferLen;
-//     UCHAR  reportId;
-//   } HID_XFER_PACKET, *PHID_XFER_PACKET;
-//
-// UMDF cannot handle embedded pointers when marshalling buffers between processes.
-// Therefore a special driver mshidumdf.sys is introduced to convert such IRPs to
-// new IRPs (with new IOCTL name like IOCTL_UMDF_HID_Xxxx) where:
-//
-//   reportBuffer - passed as one buffer inside the IRP
-//   reportId     - passed as a second buffer inside the IRP
-//
-// The new IRP is then passed to UMDF host and driver for further processing.
-//
-
 NTSTATUS RequestGetHidXferPacket_ToReadFromDevice(
     _In_ WDFREQUEST Request,
     _Out_ HID_XFER_PACKET* Packet
 )
 {
-    //
-    // Driver need to write to the output buffer (so that App can read from it)
-    //
-    //   Report Buffer: Output Buffer
-    //   Report Id    : Input Buffer
-    //
-
     NTSTATUS status;
     WDFMEMORY inputMemory;
     WDFMEMORY outputMemory;
@@ -57,9 +31,6 @@ NTSTATUS RequestGetHidXferPacket_ToReadFromDevice(
     PVOID inputBuffer;
     PVOID outputBuffer;
 
-    //
-    // Get report Id from input buffer
-    //
     status = WdfRequestRetrieveInputMemory(Request, &inputMemory);
     if (!NT_SUCCESS(status))
     {
@@ -78,9 +49,6 @@ NTSTATUS RequestGetHidXferPacket_ToReadFromDevice(
 
     Packet->reportId = *(PUCHAR)inputBuffer;
 
-    //
-    // Get report buffer from output buffer
-    //
     status = WdfRequestRetrieveOutputMemory(Request, &outputMemory);
     if (!NT_SUCCESS(status))
     {
@@ -101,20 +69,6 @@ NTSTATUS RequestGetHidXferPacket_ToWriteToDevice(
     _Out_ HID_XFER_PACKET* Packet
 )
 {
-    //
-    // Driver need to read from the input buffer (which was written by App)
-    //
-    //   Report Buffer: Input Buffer
-    //   Report Id    : Output Buffer Length
-    //
-    // Note that the report id is not stored inside the output buffer, as the
-    // driver has no read-access right to the output buffer, and trying to read
-    // from the buffer will cause an access violation error.
-    //
-    // The workaround is to store the report id in the OutputBufferLength field,
-    // to which the driver does have read-access right.
-    //
-
     NTSTATUS status;
     WDFMEMORY inputMemory;
     WDFMEMORY outputMemory;
@@ -122,9 +76,6 @@ NTSTATUS RequestGetHidXferPacket_ToWriteToDevice(
     size_t outputBufferLength;
     PVOID inputBuffer;
 
-    //
-    // Get report Id from output buffer length
-    //
     status = WdfRequestRetrieveOutputMemory(Request, &outputMemory);
     if (!NT_SUCCESS(status))
     {
@@ -134,9 +85,6 @@ NTSTATUS RequestGetHidXferPacket_ToWriteToDevice(
     WdfMemoryGetBuffer(outputMemory, &outputBufferLength);
     Packet->reportId = (UCHAR)outputBufferLength;
 
-    //
-    // Get report buffer from input buffer
-    //
     status = WdfRequestRetrieveInputMemory(Request, &inputMemory);
     if (!NT_SUCCESS(status))
     {

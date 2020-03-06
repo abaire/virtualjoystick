@@ -10,8 +10,12 @@
 
 // Maximum number of milliseconds to wait for information from the feeder
 // application before resetting driver state. This prevents a disconnect
-// from spamming infinite keyboard events.
+// from spamming infinite keyboard/joystick events.
 #define FEEDER_DISCONNECT_TIMEOUT 1000
+
+// The number of input reports supported by the virtual device.
+// Keep in sync with the contents of HIDReportDescriptor.c.
+#define NUM_INPUT_DEVICE_REPORTS 2
 
 #define DUMP_VENDOR_DEVICE_REPORT( _v_ ) KdPrintEx(( \
     T_WARNING, \
@@ -462,7 +466,7 @@ static NTSTATUS WriteReport(
 
     DUMP_VENDOR_DEVICE_REPORT(updatePacket);
 
-    for (UINT i = 0; i < 2; ++i)
+    for (UINT i = 0; i < NUM_INPUT_DEVICE_REPORTS; ++i)
     {
         switch (queueContext->deviceContext->lastServedReportID)
         {
@@ -536,6 +540,7 @@ static NTSTATUS HandlePendingJoystickReadReportRequest(
     size_t outputBytesAvailable = 0;
     size_t reportLen = sizeof(*outputReportBuffer);
     WDFREQUEST request;
+    PMANUAL_QUEUE_CONTEXT queueContext;
 
     KdPrintEx((T_TRACE, "HandlePendingJoystickReadReportRequest\n"));
 
@@ -574,6 +579,9 @@ static NTSTATUS HandlePendingJoystickReadReportRequest(
 
     *bytesWritten = (ULONG)reportLen;
     WdfRequestCompleteWithInformation(request, status, *bytesWritten);
+
+    queueContext = GetManualQueueContext(queue);
+    WdfTimerStart(queueContext->timer, WDF_REL_TIMEOUT_IN_MS(FEEDER_DISCONNECT_TIMEOUT));
 
     return STATUS_SUCCESS;
 }
@@ -763,7 +771,6 @@ static void EvtTimer(_In_ WDFTIMER timer)
     NTSTATUS status;
     WDFQUEUE queue;
     PMANUAL_QUEUE_CONTEXT queueContext;
-    KEYBOARD_SUBREPORT emptyReport;
     ULONG bytesWritten;
 
     KdPrint(("EvtTimerFunc\n"));
@@ -771,20 +778,56 @@ static void EvtTimer(_In_ WDFTIMER timer)
     queue = (WDFQUEUE)WdfTimerGetParentObject(timer);
     queueContext = GetManualQueueContext(queue);
 
-    memset(&emptyReport, 0, sizeof(emptyReport));
+    for (UINT i = 0; i < NUM_INPUT_DEVICE_REPORTS; ++i)
+    {
+        switch (queueContext->deviceContext->lastServedReportID)
+        {
+        default:
+        case REPORTID_KEYBOARD:
+            {
+                JOYSTICK_SUBREPORT emptyReport = {0};
+                emptyReport.POV = -1;
 
-    status = HandlePendingKeyboardReadReportRequest(
-        queueContext->deviceContext->pendingReadQueue,
-        &emptyReport,
-        &bytesWritten);
-    if (NT_SUCCESS(status))
-    {
-        queueContext->deviceContext->lastServedReportID = REPORTID_KEYBOARD;
-        WdfTimerStop(queueContext->timer, FALSE);
+                status = HandlePendingJoystickReadReportRequest(
+                    queueContext->deviceContext->pendingReadQueue,
+                    &emptyReport,
+                    &bytesWritten);
+                if (NT_SUCCESS(status))
+                {
+                    queueContext->deviceContext->lastServedReportID = REPORTID_JOYSTICK;
+                }
+                else
+                {
+                    // Schedule another attempt.
+                    WdfTimerStart(queueContext->timer, WDF_REL_TIMEOUT_IN_MS(FEEDER_DISCONNECT_TIMEOUT));
+                    return;
+                }
+            }
+            break;
+
+        case REPORTID_JOYSTICK:
+            {
+                KEYBOARD_SUBREPORT emptyReport = {0};
+
+                status = HandlePendingKeyboardReadReportRequest(
+                    queueContext->deviceContext->pendingReadQueue,
+                    &emptyReport,
+                    &bytesWritten);
+                if (NT_SUCCESS(status))
+                {
+                    queueContext->deviceContext->lastServedReportID = REPORTID_KEYBOARD;
+                }
+                else
+                {
+                    // Schedule another attempt.
+                    WdfTimerStart(queueContext->timer, WDF_REL_TIMEOUT_IN_MS(FEEDER_DISCONNECT_TIMEOUT));
+                    return;
+                }
+            }
+            break;
+        }
     }
-    else
-    {
-        // Schedule another attempt.
-        WdfTimerStart(queueContext->timer, WDF_REL_TIMEOUT_IN_MS(FEEDER_DISCONNECT_TIMEOUT));
-    }
+
+    // If both empty reports were sent there is no need to run the disconnect timer.
+    WdfTimerStop(queueContext->timer, FALSE);
 }

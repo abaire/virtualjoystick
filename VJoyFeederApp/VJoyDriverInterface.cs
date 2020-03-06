@@ -94,6 +94,40 @@ namespace JoystickUsermodeDriver
             RIGHT_GUI = (MODIFIER_RIGHT_GUI << 16),
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        public class VirtualDeviceState
+        {
+            public Int16 X;
+            public Int16 Y;
+
+            public Int16 throttle;
+            public Int16 rudder;
+
+            public Int16 rX;
+            public Int16 rY;
+            public Int16 rZ;
+
+            public Int16 slider;
+            public Int16 dial;
+
+            public bool povNorth;
+            public bool povEast;
+            public bool povSouth;
+            public bool povWest;
+
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+            public byte[] button; // 128 button bits
+
+            public byte modifierKeys;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 7)]
+            public UInt32[] keycodes;
+
+            public VirtualDeviceState()
+            {
+                button = new byte[16];
+                keycodes = new UInt32[7];
+            }
+        }
 
         [StructLayout(LayoutKind.Sequential)]
         public struct DeviceMapping
@@ -389,5 +423,9 @@ namespace JoystickUsermodeDriver
         [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "SetUpdateLoopDelay",
             SetLastError = false)]
         public static extern bool SetUpdateLoopDelay(UInt32 h, UInt32 delay);
+
+        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "SetVirtualDeviceState",
+            SetLastError = false)]
+        public static extern bool SetVirtualDeviceState(UInt32 h, VirtualDeviceState state, bool allowOverride);
     }
 }

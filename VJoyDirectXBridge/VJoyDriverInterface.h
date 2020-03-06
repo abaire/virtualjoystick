@@ -185,6 +185,8 @@ BOOL SetUpdateLoopDelay(HANDLE driver, UINT32 delay);
 // components in the virtual state.
 //
 // Passing NULL will clear the forced state.
+//
+// After 
 VJOYDRIVERINTERFACE_API
 BOOL SetVirtualDeviceState(HANDLE driver, const VirtualDeviceState* state, BOOL allowOverride);
 
