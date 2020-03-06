@@ -145,11 +145,6 @@ namespace JoystickUsermodeDriver
                 return;
 
             this.LoadMappingsIntoDriver();
-
-            var state = new VJoyDriverInterface.VirtualDeviceState();
-            state.button[0] = 0x01;
-            VJoyDriverInterface.SetVirtualDeviceState(_driverHandle, state, false);
-
             if (!VJoyDriverInterface.BeginDriverUpdateLoop(_driverHandle))
             {
                 MessageBox.Show("Failed to interface with virtual joystick device! Code: 1",

@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using System;
 using System.Runtime.InteropServices;
+using Microsoft.DirectX.DirectInput;
 
 namespace JoystickUsermodeDriver
 {
@@ -54,7 +55,7 @@ namespace JoystickUsermodeDriver
             Backspace = 0x08,
             Tab = (int)'\t',
             Space = (int)' ',
-
+            
             F1 = 0x013A,
             F2 = 0x013B,
             F3 = 0x013C,
@@ -73,59 +74,116 @@ namespace JoystickUsermodeDriver
             DownArrow = 0x0151,
             UpArrow = 0x0152,
 
-            KEYPAD_1 = 0x0159,
-            KEYPAD_2 = 0x015A,
-            KEYPAD_3 = 0x015B,
-            KEYPAD_4 = 0x015C,
-            KEYPAD_5 = 0x015D,
-            KEYPAD_6 = 0x015E,
-            KEYPAD_7 = 0x015F,
-            KEYPAD_8 = 0x0160,
-            KEYPAD_9 = 0x0161,
-            KEYPAD_0 = 0x0162,
+            Keypad_1 = 0x0159,
+            Keypad_2 = 0x015A,
+            Keypad_3 = 0x015B,
+            Keypad_4 = 0x015C,
+            Keypad_5 = 0x015D,
+            Keypad_6 = 0x015E,
+            Keypad_7 = 0x015F,
+            Keypad_8 = 0x0160,
+            Keypad_9 = 0x0161,
+            Keypad_0 = 0x0162,
 
-            LEFT_CTRL = (MODIFIER_LEFT_CTRL << 16),
-            LEFT_SHIFT = (MODIFIER_LEFT_SHIFT << 16),
-            LEFT_ALT = (MODIFIER_LEFT_ALT << 16),
-            LEFT_GUI = (MODIFIER_LEFT_GUI << 16),
-            RIGHT_CTRL = (MODIFIER_RIGHT_CTRL << 16),
-            RIGHT_SHIFT = (MODIFIER_RIGHT_SHIFT << 16),
-            RIGHT_ALT = (MODIFIER_RIGHT_ALT << 16),
-            RIGHT_GUI = (MODIFIER_RIGHT_GUI << 16),
+            LeftCtrl = (MODIFIER_LEFT_CTRL << 16),
+            LeftShift = (MODIFIER_LEFT_SHIFT << 16),
+            LeftAlt = (MODIFIER_LEFT_ALT << 16),
+            LeftGUI = (MODIFIER_LEFT_GUI << 16),
+            RightCtrl = (MODIFIER_RIGHT_CTRL << 16),
+            RightShift = (MODIFIER_RIGHT_SHIFT << 16),
+            RightAlt = (MODIFIER_RIGHT_ALT << 16),
+            RightGUI = (MODIFIER_RIGHT_GUI << 16),
         }
 
         [StructLayout(LayoutKind.Sequential)]
         public class VirtualDeviceState
         {
+            private const int MaxSimultaneousKeys = 7;
+
             public Int16 X;
             public Int16 Y;
 
-            public Int16 throttle;
-            public Int16 rudder;
+            public Int16 Throttle;
+            public Int16 Rudder;
 
-            public Int16 rX;
-            public Int16 rY;
-            public Int16 rZ;
+            public Int16 RX;
+            public Int16 RY;
+            public Int16 RZ;
 
-            public Int16 slider;
-            public Int16 dial;
+            public Int16 Slider;
+            public Int16 Dial;
 
-            public bool povNorth;
-            public bool povEast;
-            public bool povSouth;
-            public bool povWest;
+            public bool POVNorth;
+            public bool POVEast;
+            public bool POVSouth;
+            public bool POVWest;
 
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-            public byte[] button; // 128 button bits
+            public byte[] Button; // 128 button bits
 
-            public byte modifierKeys;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 7)]
-            public UInt32[] keycodes;
+            public byte ModifierKeys;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MaxSimultaneousKeys)]
+            public UInt32[] Keycodes;
 
             public VirtualDeviceState()
             {
-                button = new byte[16];
-                keycodes = new UInt32[7];
+                Button = new byte[16];
+                Keycodes = new UInt32[7];
+            }
+
+            public void SetButton(byte buttonNumber, bool isOn = true)
+            {
+                if (buttonNumber > 128) { return; }
+
+                int offset = buttonNumber >> 3;
+                byte bit = (byte)(1 << (buttonNumber & 0x07));
+
+                if (isOn)
+                {
+                    Button[offset] |= bit;
+                }
+                else
+                {
+                    Button[offset] &= (byte) ~bit;
+                }
+            }
+
+            public bool SetKey(char key, bool isDown = true)
+            {
+                return SetKey((UInt32)key, isDown);
+            }
+
+            public bool SetKey(Keycode key, bool isDown = true)
+            {
+                return SetKey((UInt32) key, isDown);
+            }
+
+            public bool SetKey(UInt32 key, bool isDown = true)
+            {
+                if (isDown)
+                {
+                    for (var i = 0; i < MaxSimultaneousKeys; ++i)
+                    {
+                        if (Keycodes[i] == 0)
+                        {
+                            Keycodes[i] = key;
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    for (var i = 0; i < MaxSimultaneousKeys; ++i)
+                    {
+                        if (Keycodes[i] == key)
+                        {
+                            Keycodes[i] = 0;
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
             }
         }
 
