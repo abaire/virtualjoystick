@@ -108,6 +108,34 @@ typedef struct _DeviceMapping
     BOOL invert; //!< Whether or not we should logically invert the physical state when injecting the virtual device
 } DeviceMapping;
 
+//! \struct VirtualDeviceState
+//! \brief Models the state of the virtual joystick.
+typedef struct _VirtualDeviceState
+{
+    INT16 x;
+    INT16 y;
+
+    INT16 throttle;
+    INT16 rudder;
+
+    INT16 rX;
+    INT16 rY;
+    INT16 rZ;
+
+    INT16 slider;
+    INT16 dial;
+
+    BOOL povNorth;
+    BOOL povEast;
+    BOOL povSouth;
+    BOOL povWest;
+
+    UCHAR button[16]; // 128 button bits
+
+    UINT8 modifierKeys;
+    DWORD keycodes[7];
+} VirtualDeviceState;
+
 typedef void (CALLBACK* DeviceEnumCB)(const char* name, const char* guid);
 typedef void (CALLBACK* DeviceInfoCB)(MappingType type, const char* name, UINT32 index);
 
@@ -151,5 +179,13 @@ UINT32 UpdateLoopDelay(HANDLE driver);
 
 VJOYDRIVERINTERFACE_API
 BOOL SetUpdateLoopDelay(HANDLE driver, UINT32 delay);
+
+// Forces the virtual joystick device to present the given state.
+// If allowOverride is TRUE, any mapped explicit values from physical devices will override
+// components in the virtual state.
+//
+// Passing NULL will clear the forced state.
+VJOYDRIVERINTERFACE_API
+BOOL SetVirtualDeviceState(HANDLE driver, const VirtualDeviceState* state, BOOL allowOverride);
 
 } // extern "C"

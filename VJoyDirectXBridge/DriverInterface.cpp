@@ -64,6 +64,7 @@ CDriverInterface::CDriverInterface() :
     , m_updateThreadRunning(FALSE)
     , m_updateLoopDelay(DEFAULT_LOOP_DELAY)
     , m_interruptEvent(INVALID_HANDLE_VALUE)
+    , m_defaultVirtualDeviceState()
 {
 }
 
@@ -86,10 +87,12 @@ CDriverInterface& CDriverInterface::operator=(CDriverInterface&& o) noexcept
     m_updateThreadHandle = std::exchange(o.m_updateThreadHandle, INVALID_HANDLE_VALUE);
     m_updateThreadRunning = std::move(o.m_updateThreadRunning);
     m_interruptEvent = std::exchange(o.m_interruptEvent, INVALID_HANDLE_VALUE);
-    m_updateLoopDelay = std::move(o.m_updateLoopDelay);
+    m_updateLoopDelay = o.m_updateLoopDelay.load();
     m_pDI = std::exchange(o.m_pDI, (LPDIRECTINPUT8)NULL);
     m_inputDeviceVector = std::move(o.m_inputDeviceVector);
     m_deviceGUIDMapping = std::move(o.m_deviceGUIDMapping);
+    m_defaultVirtualDeviceState = o.m_defaultVirtualDeviceState.load();
+    m_enableDevicePolling = o.m_enableDevicePolling.load();
 
     return *this;
 }
@@ -253,20 +256,18 @@ void CDriverInterface::RunPollingLoop(void)
 
     UINT32 numFailures = 0;
 
-    VENDOR_DEVICE_PACKET packet;
-    memset(&packet, 0, sizeof(packet));
-    packet.id = REPORTID_VENDOR;
-
     while (m_updateThreadRunning)
     {
-        // Invalidate the POV axis
-        packet.joystick.POV = -1;
-        memset(&packet.keyboard, 0, sizeof(packet.keyboard));
+        VENDOR_DEVICE_PACKET packet = m_defaultVirtualDeviceState.load();
+        packet.id = REPORTID_VENDOR;
 
-        DeviceVector::iterator it = m_inputDeviceVector.begin();
-        DeviceVector::iterator itEnd = m_inputDeviceVector.end();
-        for (; it != itEnd; ++it)
-            it->GetVirtualStateUpdatePacket(packet);
+        if (m_enableDevicePolling)
+        {
+            DeviceVector::iterator it = m_inputDeviceVector.begin();
+            DeviceVector::iterator itEnd = m_inputDeviceVector.end();
+            for (; it != itEnd; ++it)
+                it->GetVirtualStateUpdatePacket(packet);
+        }
 
         DWORD bytesWritten;
         if (!WriteFile(m_driverHandle,

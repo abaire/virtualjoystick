@@ -18,7 +18,7 @@
 typedef std::map<HANDLE, CDriverInterface> HandleMap;
 static HandleMap g_driverHandles;
 
-static inline void ParseGUID(GUID& ret, const char* str);
+static void ParseGUID(GUID& ret, const char* str);
 static void KeycodeToHIDKeycode(DWORD& keycode);
 
 
@@ -179,7 +179,8 @@ BOOL SetDeviceMapping(HANDLE attachID, const char* deviceGUIDStr, const DeviceMa
         }
 
         // Map keys to HID device codes.
-        if (mapping.destType == MappingType::mt_key) {
+        if (mapping.destType == MappingType::mt_key)
+        {
             KeycodeToHIDKeycode(mapping.destIndex);
         }
         mappingVector.push_back(mapping);
@@ -221,7 +222,96 @@ BOOL SetUpdateLoopDelay(HANDLE attachID, UINT32 delay)
     return TRUE;
 }
 
-static inline void ParseGUID(GUID& ret, const char* str)
+extern "C"
+VJOYDRIVERINTERFACE_API
+BOOL SetVirtualDeviceState(HANDLE attachID, const VirtualDeviceState* state, BOOL allowOverride)
+{
+    HandleMap::iterator it = g_driverHandles.find(attachID);
+    if (it == g_driverHandles.end())
+        return FALSE;
+
+    VENDOR_DEVICE_PACKET defaultState;
+    if (!state)
+    {
+        memset(&defaultState, 0, sizeof(defaultState));
+        defaultState.joystick.POV = -1;
+        defaultState.id = REPORTID_VENDOR;
+    }
+    else
+    {
+        auto& joystick = defaultState.joystick;
+        joystick.X = state->x;
+        joystick.Y = state->y;
+        joystick.Throttle = state->throttle;
+        joystick.Rudder = state->rudder;
+        joystick.rX = state->rX;
+        joystick.rY = state->rY;
+        joystick.rZ = state->rZ;
+        joystick.Slider = state->slider;
+        joystick.Dial = state->dial;
+
+        joystick.POV = -1;
+        if (state->povNorth)
+        {
+            joystick.POV = 0;
+            if (state->povEast)
+            {
+                joystick.POV = 1;
+            }
+            else if (state->povWest)
+            {
+                joystick.POV = 7;
+            }
+        }
+        else if (state->povSouth)
+        {
+            joystick.POV = 4;
+            if (state->povEast)
+            {
+                joystick.POV = 3;
+            }
+            else if (state->povWest)
+            {
+                joystick.POV = 5;
+            }
+        }
+        else if (state->povEast)
+        {
+            joystick.POV = 2;
+        }
+        else if (state->povWest)
+        {
+            joystick.POV = 6;
+        }
+
+        memcpy(joystick.Button, state->button, sizeof(joystick.Button));
+
+        defaultState.keyboard.modifierKeys = state->modifierKeys;
+        for (auto i = 0, j = 0; i < 7; ++i)
+        {
+            DWORD keycode = state->keycodes[i];
+            KeycodeToHIDKeycode(keycode);
+            if (keycode)
+            {
+                defaultState.keyboard.keycodes[j++] = static_cast<UINT8>(keycode);
+            }
+        }
+    }
+
+    it->second.SetDefaultVirtualDeviceState(defaultState);
+    if (allowOverride)
+    {
+        it->second.EnablePhysicalDevicePolling();
+    }
+    else
+    {
+        it->second.DisablePhysicalDevicePolling();
+    }
+
+    return TRUE;
+}
+
+static void ParseGUID(GUID& ret, const char* str)
 {
     UINT32 val1, val2, val3, val4_1, val4_2, val4_3, val4_4, val4_5, val4_6, val4_7, val4_8;
     sscanf_s(

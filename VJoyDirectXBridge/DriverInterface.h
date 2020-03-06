@@ -8,6 +8,7 @@
 #pragma once
 
 //= I N C L U D E S ===========================================================================
+#include <atomic>
 #include <dinput.h>
 #include <list>
 #include <map>
@@ -84,14 +85,24 @@ public:
     }
 
     DWORD UpdateLoopDelay() const { return m_updateLoopDelay; }
+
     void SetUpdateLoopDelay(DWORD delay)
     {
-        if (delay <= 0) {
+        if (delay <= 0)
+        {
             delay = DEFAULT_LOOP_DELAY;
         }
 
         m_updateLoopDelay = delay;
     }
+
+    void SetDefaultVirtualDeviceState(const VENDOR_DEVICE_PACKET& packet)
+    {
+        m_defaultVirtualDeviceState = packet;
+    }
+
+    void EnablePhysicalDevicePolling() { m_enableDevicePolling = TRUE; }
+    void DisablePhysicalDevicePolling() { m_enableDevicePolling = FALSE; }
 
     BOOL EnumerateDevices(DeviceEnumCB cb);
     BOOL GetDeviceInfo(
@@ -153,7 +164,9 @@ protected:
 
     HANDLE m_interruptEvent;
 
-    volatile DWORD m_updateLoopDelay;
+    std::atomic<DWORD> m_updateLoopDelay;
+    std::atomic<BOOL> m_enableDevicePolling;
+    std::atomic<VENDOR_DEVICE_PACKET> m_defaultVirtualDeviceState;
 
     static LPDIRECTINPUT8 m_pDI;
     DeviceVector m_inputDeviceVector;
