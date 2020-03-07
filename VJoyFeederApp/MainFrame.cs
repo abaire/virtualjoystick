@@ -48,7 +48,7 @@ namespace JoystickUsermodeDriver
             BeginFeedingDriver();
 
             _tcpController = new TCPController();
-            _tcpController.Address = "127.0.0.1";
+            // _tcpController.Address = "127.0.0.1";
             _tcpController.Start();
 #if DEBUG
             MenuShow_Click(null, null);

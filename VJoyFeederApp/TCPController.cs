@@ -52,14 +52,9 @@ namespace JoystickUsermodeDriver
 
             IPAddress addr;
             if (Address != null)
-            {
                 addr = IPAddress.Parse(Address);
-            }
             else
-            {
-                var entry = Dns.GetHostEntry("localhost");
-                addr = entry.AddressList[0];
-            }
+                addr = IPAddress.Any;
 
             _listener = new TcpListener(addr, _port);
             _listener.Start();
@@ -105,7 +100,8 @@ namespace JoystickUsermodeDriver
         private byte[] _buffer;
         private int _bufferWriteHead;
 
-        internal ControlClient(TcpClient client, ICloseDelegate closeDelegate, IControlProtocolDelegate protocolDelegate)
+        internal ControlClient(TcpClient client, ICloseDelegate closeDelegate,
+            IControlProtocolDelegate protocolDelegate)
         {
             _client = client;
             _buffer = new byte[BufferSize];
