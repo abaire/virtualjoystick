@@ -95,6 +95,8 @@ enum class AxisIndex
     axis_rudder,
 };
 
+#include <pshpack1.h>
+
 //! \struct DeviceMapping
 //! \brief  Maps a specific dinput state variable to an output slot in the virtual joystick
 typedef struct _DeviceMapping
@@ -107,8 +109,6 @@ typedef struct _DeviceMapping
 
     BOOL invert; //!< Whether or not we should logically invert the physical state when injecting the virtual device
 } DeviceMapping;
-
-#include <pshpack1.h>
 
 //! \struct VirtualDeviceState
 //! \brief Models the state of the virtual joystick.
@@ -128,6 +128,8 @@ typedef struct _VirtualDeviceState
 
     INT16 rudder;
 
+    UINT8 _PAD_0[2];
+
     UINT8 povNorth;
     UINT8 povEast;
     UINT8 povSouth;
@@ -135,8 +137,9 @@ typedef struct _VirtualDeviceState
 
     UINT8 button[16]; // 128 button bits
 
-    UINT8 modifierKeys;
     UINT32 keycodes[7];
+
+    UINT8 modifierKeys;
 } VirtualDeviceState;
 
 #include <poppack.h>

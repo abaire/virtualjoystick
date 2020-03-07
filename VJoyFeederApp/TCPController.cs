@@ -74,7 +74,6 @@ namespace JoystickUsermodeDriver
         {
             IVirtualDeviceStateWatcher d;
             if (_stateDelegate != null && _stateDelegate.TryGetTarget(out d)) d.StateUpdated(_mergedState);
-
         }
 
         private void Merge(

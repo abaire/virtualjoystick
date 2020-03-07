@@ -19,7 +19,7 @@ typedef std::map<HANDLE, CDriverInterface> HandleMap;
 static HandleMap g_driverHandles;
 
 static void ParseGUID(GUID& ret, const char* str);
-static void KeycodeToHIDKeycode(DWORD& keycode);
+static void KeycodeToHIDKeycode(UINT32& keycode);
 
 //= F U N C T I O N S =========================================================================
 
@@ -175,11 +175,13 @@ BOOL SetDeviceMapping(HANDLE attachID, const char* deviceGUIDStr, const DeviceMa
         {
             continue;
         }
-
+        
         // Map keys to HID device codes.
         if (mapping.destType == MappingType::mt_key)
         {
-            KeycodeToHIDKeycode(mapping.destIndex);
+            UINT32 keycode = static_cast<UINT32>(mapping.destIndex);
+            KeycodeToHIDKeycode(keycode);
+            mapping.destIndex = keycode;
         }
         mappingVector.push_back(mapping);
     }
@@ -229,13 +231,11 @@ BOOL SetVirtualDeviceState(HANDLE attachID, const VirtualDeviceState* state, BOO
         return FALSE;
 
     VENDOR_DEVICE_PACKET defaultState;
-    if (!state)
-    {
-        memset(&defaultState, 0, sizeof(defaultState));
-        defaultState.joystick.POV = -1;
-        defaultState.id = REPORTID_VENDOR;
-    }
-    else
+    memset(&defaultState, 0, sizeof(defaultState));
+    defaultState.joystick.POV = -1;
+    defaultState.id = REPORTID_VENDOR;
+
+    if (state)
     {
         auto& joystick = defaultState.joystick;
         joystick.X = state->x;
@@ -287,11 +287,12 @@ BOOL SetVirtualDeviceState(HANDLE attachID, const VirtualDeviceState* state, BOO
         defaultState.keyboard.modifierKeys = state->modifierKeys;
         for (auto i = 0, j = 0; i < 7; ++i)
         {
-            DWORD keycode = state->keycodes[i];
+            UINT32 keycode = state->keycodes[i];
+            UINT32 rawKeycode = keycode;
             KeycodeToHIDKeycode(keycode);
             if (keycode)
             {
-                defaultState.keyboard.keycodes[j++] = static_cast<UINT8>(keycode);
+                defaultState.keyboard.keycodes[j++] = static_cast<UINT8>(keycode & 0xFF);
             }
         }
     }
@@ -373,7 +374,7 @@ static void ParseGUID(GUID& ret, const char* str)
 #define HID_KEY_TAB 0x2b // Keyboard Tab
 #define HID_KEY_SPACE 0x2c // Keyboard Spacebar
 
-static __inline void ASCIIKeycodeToHIDKeycode(DWORD& keycode)
+static __inline void ASCIIKeycodeToHIDKeycode(UINT32& keycode)
 {
     if (keycode >= 'A' && keycode <= 'Z')
     {
@@ -621,6 +622,8 @@ static __inline void ASCIIKeycodeToHIDKeycode(DWORD& keycode)
         keycode = HID_KEY_SPACE;
         return;
     }
+
+    keycode = 0;
 }
 
 #define HID_KEY_F1 0x3A
@@ -638,7 +641,7 @@ static __inline void ASCIIKeycodeToHIDKeycode(DWORD& keycode)
 
 #define HID_KEY_KEYPAD_1 0x59
 
-static void KeycodeToHIDKeycode(DWORD& keycode)
+static void KeycodeToHIDKeycode(UINT32& keycode)
 {
     if (keycode < 0x80)
     {

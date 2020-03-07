@@ -40,7 +40,7 @@ class DeviceState:
             f"{self.pov_east} {self.pov_south} {self.pov_west} Buttons: "
             f"{self.buttons} Modifiers: {self.modifier_keys} Keys: "
             f"{self.keycodes} >")
-        
+
     def __eq__(self, other):
         for idx, val in enumerate(self.axes):
             if other.axes[idx] != val:
@@ -53,15 +53,15 @@ class DeviceState:
         for idx, val in enumerate(self.keycodes):
             if other.keycodes[idx] != val:
                 return False
-            
+
         return (
             self.pov_north == other.pov_north and
             self.pov_east == other.pov_east and
             self.pov_south == other.pov_south and
             self.pov_west == other.pov_west and
             self.modifier_keys == other.modifier_keys)
-    
-        
+
+
     def read(self, connection):
         buf = b""
         while (len(buf) < _SIZEOF_DEVICE_STATE):
@@ -122,7 +122,7 @@ class DeviceState:
 
 
 class Connection:
-    
+
     _ACK = bytearray([0x01])
     _NET_TIMEOUT = 0.5
 
@@ -163,7 +163,7 @@ class Connection:
     def get_current_state(self):
         command = struct.pack("!B", _self.COMMAND_GET_CURRENT_STATE)
         self.send(command)
-    
+
         state = DeviceState()
         state.read(self._connection)
         return state
@@ -184,11 +184,8 @@ class Connection:
         command = struct.pack("!Bb", self._COMMAND_POV, state)
         self.send(command)
 
-        
-def main(args):
-    conn = Connection()
-    conn.connect()
 
+def _joystick(conn):
     print("Preparing to test, focus Game Controller properties...")
     time.sleep(2)
 
@@ -212,22 +209,33 @@ def main(args):
         time.sleep(0.25)
     conn.set_pov(0)
 
+
+def _keyboard(conn):
     print("Waiting 5 seconds before keycode test. Focus an editable buffer.")
     time.sleep(5)
 
     conn.set_key(ord('h'))
     time.sleep(1)
     conn.set_key(ord('h'), False)
-    
+
     conn.set_key(ord('i'))
     time.sleep(1)
     conn.set_key(ord('i'), False)
-    
-    
+
+
+def main(args):
+    conn = Connection()
+    conn.connect()
+
+#    _joystick(conn)
+    _keyboard(conn)
+
+
+
     print("Cleaning up...")
     time.sleep(2)
     conn.disconnect()
 
-        
+
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

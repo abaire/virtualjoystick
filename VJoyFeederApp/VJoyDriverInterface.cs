@@ -158,38 +158,55 @@ namespace JoystickUsermodeDriver
             SetLastError = false)]
         public static extern bool SetVirtualDeviceState(uint h, VirtualDeviceState state, bool allowOverride = true);
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        // Keep in sync with struct _VirtualDeviceState in VJoyDriverInterface.h.
+        [StructLayout(LayoutKind.Explicit, Pack = 1)]
         public class VirtualDeviceState
         {
             public const int MaxSimultaneousKeys = 7;
 
             // Ordering must match the AxisIndex for serialization.
+            [FieldOffset(0)]
             public short X;
+            [FieldOffset(2)]
             public short Y;
+            [FieldOffset(4)]
             public short Throttle;
+            [FieldOffset(6)]
             public short RX;
+            [FieldOffset(8)]
             public short RY;
+            [FieldOffset(10)]
             public short RZ;
+            [FieldOffset(12)]
             public short Slider;
+            [FieldOffset(14)]
             public short Dial;
+            [FieldOffset(16)]
             public short Rudder;
 
             [MarshalAs(UnmanagedType.I1)]
+            [FieldOffset(20)]
             public bool POVNorth;
             [MarshalAs(UnmanagedType.I1)]
+            [FieldOffset(21)]
             public bool POVEast;
             [MarshalAs(UnmanagedType.I1)]
+            [FieldOffset(22)]
             public bool POVSouth;
             [MarshalAs(UnmanagedType.I1)]
+            [FieldOffset(23)]
             public bool POVWest;
 
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+            [FieldOffset(24)]
             public byte[] Button; // 128 button bits
 
-            public byte ModifierKeys;
-
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = MaxSimultaneousKeys, ArraySubType = UnmanagedType.U4)]
+            [FieldOffset(40)]
             public UInt32[] Keycodes;
+
+            [FieldOffset(68)]
+            public byte ModifierKeys;
 
             public VirtualDeviceState()
             {
