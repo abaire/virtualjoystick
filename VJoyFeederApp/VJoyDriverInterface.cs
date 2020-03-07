@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using Microsoft.DirectX.DirectInput;
 using Microsoft.Win32;
 
 namespace JoystickUsermodeDriver
@@ -159,7 +160,7 @@ namespace JoystickUsermodeDriver
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public class VirtualDeviceState
         {
-            private const int MaxSimultaneousKeys = 7;
+            public const int MaxSimultaneousKeys = 7;
 
             public short X;
             public short Y;
@@ -190,9 +191,9 @@ namespace JoystickUsermodeDriver
                 Keycodes = new uint[7];
             }
 
-            public void SetButton(byte buttonNumber, bool isOn = true)
+            public bool SetButton(byte buttonNumber, bool isOn = true)
             {
-                if (buttonNumber > 128) return;
+                if (buttonNumber > 128) return false;
 
                 var offset = buttonNumber >> 3;
                 var bit = (byte) (1 << (buttonNumber & 0x07));
@@ -201,6 +202,64 @@ namespace JoystickUsermodeDriver
                     Button[offset] |= bit;
                 else
                     Button[offset] &= (byte) ~bit;
+
+                return true;
+            }
+
+            public bool SetAxis(int axis, short val)
+            {
+                var axisIndex = (AxisIndex) axis;
+                if (!Enum.IsDefined(typeof(AxisIndex), axisIndex)) return false;
+                return SetAxis(axisIndex, val);
+            }
+
+            public bool SetAxis(AxisIndex axis, short val)
+            {
+                if (axis == AxisIndex.axis_none) return true;
+
+                switch (axis)
+                {
+                    default:
+                        return false;
+
+                    case AxisIndex.axis_x:
+                        X = val;
+                        break;
+
+                    case AxisIndex.axis_y:
+                        Y = val;
+                        break;
+
+                    case AxisIndex.axis_throttle: 
+                        Throttle = val;
+                        break;
+
+                    case AxisIndex.axis_rudder:
+                        Rudder = val;
+                        break;
+
+                    case AxisIndex.axis_rx:
+                        RX = val;
+                        break;
+
+                    case AxisIndex.axis_ry:
+                        RY = val;
+                        break;
+
+                    case AxisIndex.axis_rz:
+                        RZ = val;
+                        break;
+
+                    case AxisIndex.axis_slider:
+                        Slider = val;
+                        break;
+
+                    case AxisIndex.axis_dial:
+                        Dial = val;
+                        break;
+                }
+
+                return true;
             }
 
             public bool SetKey(char key, bool isDown = true)
@@ -235,6 +294,16 @@ namespace JoystickUsermodeDriver
                 }
 
                 return false;
+            }
+
+            public void ClearPOV()
+            {
+                POVEast = POVNorth = POVWest = POVSouth = false;
+            }
+
+            public void ClearMaskedModifierKeys(int mask)
+            {
+                ModifierKeys = (byte) (ModifierKeys & mask);
             }
         }
 

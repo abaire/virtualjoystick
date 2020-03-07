@@ -10,7 +10,7 @@ namespace JoystickUsermodeDriver
     internal interface IControlProtocolDelegate
     {
         bool HandleKeycode(uint keycode, bool isPressed);
-        bool HandleAxis(byte axis, ushort position);
+        bool HandleAxis(byte axis, short position);
         bool HandleButton(byte button, bool isPressed);
         bool HandlePOV(byte povState);
     }
@@ -43,7 +43,7 @@ namespace JoystickUsermodeDriver
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct AxisCommand
     {
-        internal ushort position;
+        internal short position;
         internal byte axis;
     }
 
@@ -181,7 +181,7 @@ namespace JoystickUsermodeDriver
             var obj = (AxisCommand) Marshal.PtrToStructure(gch.AddrOfPinnedObject() + 1, packetType);
             gch.Free();
 
-            obj.position = (ushort) IPAddress.NetworkToHostOrder((short) obj.position);
+            obj.position = IPAddress.NetworkToHostOrder(obj.position);
             ShiftBuffer(ref buffer, ref bufferLength, packetSize + 1);
 
             IControlProtocolDelegate d;

@@ -8,42 +8,108 @@ namespace JoystickUsermodeDriver
 {
     internal interface ICloseDelegate
     {
-        void ControlClientClosed(ControlClient client);
+        void ControllerClientClosed(TCPControllerClient client);
     }
 
-    public class TCPController : ICloseDelegate, IControlProtocolDelegate
+    internal interface IControlStateWatcher
+    {
+        bool StateUpdated(
+            in VJoyDriverInterface.VirtualDeviceState state,
+            in VJoyDriverInterface.VirtualDeviceState stateMask);
+    }
+
+    public interface IVirtualDeviceStateWatcher
+    {
+        void StateUpdated(in VJoyDriverInterface.VirtualDeviceState state);
+    }
+
+    public class TCPController : ICloseDelegate, IControlStateWatcher
     {
         private const int MaxClients = 10;
-        private readonly List<ControlClient> _clients = new List<ControlClient>(MaxClients);
+        private readonly List<TCPControllerClient> _clients = new List<TCPControllerClient>(MaxClients);
 
         private readonly short _port = 13057;
         private TcpListener _listener;
 
+        private WeakReference<IVirtualDeviceStateWatcher> _stateDelegate;
+        private VJoyDriverInterface.VirtualDeviceState _mergedState = new VJoyDriverInterface.VirtualDeviceState();
+
         public string Address;
 
-        void ICloseDelegate.ControlClientClosed(ControlClient client)
+        public IVirtualDeviceStateWatcher StateDelegate
         {
+            set
+            {
+                _stateDelegate = new WeakReference<IVirtualDeviceStateWatcher>(value);
+            }
+        }
+
+        void ICloseDelegate.ControllerClientClosed(TCPControllerClient client)
+        {
+            Unmerge(client.State, client.StateMask);
             _clients.Remove(client);
         }
 
-        bool IControlProtocolDelegate.HandleKeycode(uint keycode, bool isPressed)
+        bool IControlStateWatcher.StateUpdated(
+            in VJoyDriverInterface.VirtualDeviceState state,
+            in VJoyDriverInterface.VirtualDeviceState stateMask)
         {
+            Merge(state, stateMask);
+            IVirtualDeviceStateWatcher d;
+            if (_stateDelegate != null && _stateDelegate.TryGetTarget(out d)) d.StateUpdated(_mergedState);
             return true;
         }
 
-        bool IControlProtocolDelegate.HandleAxis(byte axis, ushort position)
+        private void Unmerge(
+            in VJoyDriverInterface.VirtualDeviceState state,
+            in VJoyDriverInterface.VirtualDeviceState stateMask)
         {
-            return true;
+            if (stateMask.X != 0) _mergedState.X = 0;
+            if (stateMask.Y != 0) _mergedState.Y = 0;
+            if (stateMask.Throttle != 0) _mergedState.Throttle = 0;
+            if (stateMask.Rudder != 0) _mergedState.Rudder = 0;
+            if (stateMask.RX != 0) _mergedState.RX = 0;
+            if (stateMask.RY != 0) _mergedState.RY = 0;
+            if (stateMask.RZ != 0) _mergedState.RZ = 0;
+            if (stateMask.Slider != 0) _mergedState.Slider = 0;
+            if (stateMask.Dial != 0) _mergedState.Dial = 0;
+
+            if (stateMask.POVNorth) _mergedState.ClearPOV();
+
+            foreach (var keycode in state.Keycodes)
+            {
+                if (keycode == 0) continue;
+                _mergedState.SetKey(keycode, false);
+            }
         }
 
-        bool IControlProtocolDelegate.HandleButton(byte button, bool isPressed)
+        private void Merge(
+            in VJoyDriverInterface.VirtualDeviceState state,
+            in VJoyDriverInterface.VirtualDeviceState stateMask)
         {
-            return true;
-        }
+            if (stateMask.X != 0) _mergedState.X = state.X;
+            if (stateMask.Y != 0) _mergedState.Y = state.Y;
+            if (stateMask.Throttle != 0) _mergedState.Throttle = state.Throttle;
+            if (stateMask.Rudder != 0) _mergedState.Rudder = state.Rudder;
+            if (stateMask.RX != 0) _mergedState.RX = state.RX;
+            if (stateMask.RY != 0) _mergedState.RY = state.RY;
+            if (stateMask.RZ != 0) _mergedState.RZ = state.RZ;
+            if (stateMask.Slider != 0) _mergedState.Slider = state.Slider;
+            if (stateMask.Dial != 0) _mergedState.Dial = state.Dial;
 
-        bool IControlProtocolDelegate.HandlePOV(byte povState)
-        {
-            return true;
+            if (stateMask.POVNorth)
+            {
+                _mergedState.POVNorth = state.POVNorth;
+                _mergedState.POVEast = state.POVEast;
+                _mergedState.POVSouth = state.POVSouth;
+                _mergedState.POVWest = state.POVWest;
+            }
+
+            foreach (var keycode in state.Keycodes)
+            {
+                if (keycode == 0) continue;
+                _mergedState.SetKey(keycode);
+            }
         }
 
         public void Start()
@@ -82,7 +148,7 @@ namespace JoystickUsermodeDriver
             }
             else
             {
-                var controller = new ControlClient(client, self, self);
+                var controller = new TCPControllerClient(client, self, self);
                 self._clients.Add(controller);
                 controller.Start();
             }
@@ -91,22 +157,28 @@ namespace JoystickUsermodeDriver
         }
     }
 
-    internal class ControlClient
+    internal class TCPControllerClient : IControlProtocolDelegate
     {
         private const int BufferSize = 256;
         private readonly TcpClient _client;
         private readonly WeakReference<ICloseDelegate> _closeDelegate;
+        private readonly WeakReference<IControlStateWatcher> _stateDelegate;
         private readonly ControlProtocol _protocol;
         private byte[] _buffer;
         private int _bufferWriteHead;
+        private readonly VJoyDriverInterface.VirtualDeviceState _state = new VJoyDriverInterface.VirtualDeviceState();
+        private readonly VJoyDriverInterface.VirtualDeviceState _stateMask = new VJoyDriverInterface.VirtualDeviceState();
 
-        internal ControlClient(TcpClient client, ICloseDelegate closeDelegate,
-            IControlProtocolDelegate protocolDelegate)
+        internal VJoyDriverInterface.VirtualDeviceState State => _state;
+        internal VJoyDriverInterface.VirtualDeviceState StateMask => _stateMask;
+
+        internal TCPControllerClient(TcpClient client, ICloseDelegate closeDelegate, IControlStateWatcher stateDelegate)
         {
             _client = client;
             _buffer = new byte[BufferSize];
-            _protocol = new ControlProtocol(protocolDelegate);
+            _protocol = new ControlProtocol(this);
             _closeDelegate = new WeakReference<ICloseDelegate>(closeDelegate);
+            _stateDelegate = new WeakReference<IControlStateWatcher>(stateDelegate);
         }
 
         internal void Start()
@@ -121,10 +193,24 @@ namespace JoystickUsermodeDriver
             }
         }
 
+        public void Close()
+        {
+            _client.Close();
+            NotifyClosed();
+        }
+
         private void NotifyClosed()
         {
             ICloseDelegate d;
-            if (_closeDelegate.TryGetTarget(out d)) d.ControlClientClosed(this);
+            if (_closeDelegate.TryGetTarget(out d)) d.ControllerClientClosed(this);
+        }
+
+        private bool NotifyStateChanged()
+        {
+            IControlStateWatcher d;
+            if (_stateDelegate.TryGetTarget(out d)) return d.StateUpdated(_state, _stateMask);
+
+            return true;
         }
 
         private bool HandleData()
@@ -135,8 +221,7 @@ namespace JoystickUsermodeDriver
                 previousBytesAvailable = _bufferWriteHead;
                 if (!_protocol.Handle(ref _buffer, ref _bufferWriteHead))
                 {
-                    _client.Close();
-                    NotifyClosed();
+                    Close();
                     return false;
                 }
 
@@ -149,7 +234,7 @@ namespace JoystickUsermodeDriver
 
         private static void ReadData(IAsyncResult ar)
         {
-            var self = (ControlClient) ar.AsyncState;
+            var self = (TCPControllerClient) ar.AsyncState;
             if (!self._client.Connected)
             {
                 self.NotifyClosed();
@@ -169,7 +254,13 @@ namespace JoystickUsermodeDriver
                 self._bufferWriteHead += bytesRead;
                 if (!self.HandleData()) return;
 
-                stream.BeginRead(self._buffer, self._bufferWriteHead, BufferSize - self._bufferWriteHead, ReadData,
+                var bufferAvailable = BufferSize - self._bufferWriteHead;
+                if (bufferAvailable == 0)
+                {
+                    self.Close();
+                    return;
+                }
+                stream.BeginRead(self._buffer, self._bufferWriteHead, bufferAvailable, ReadData,
                     self);
             }
             catch (IOException)
@@ -180,6 +271,75 @@ namespace JoystickUsermodeDriver
             {
                 self.NotifyClosed();
             }
+        }
+
+        bool IControlProtocolDelegate.HandleKeycode(uint keycode, bool isPressed)
+        {
+            if (!_state.SetKey(keycode, isPressed)) return false;
+            return NotifyStateChanged();
+        }
+
+        bool IControlProtocolDelegate.HandleAxis(byte axis, short position)
+        {
+            _stateMask.SetAxis(axis, 1);
+            if (!_state.SetAxis(axis, position)) return false;
+            return NotifyStateChanged();
+        }
+
+        bool IControlProtocolDelegate.HandleButton(byte button, bool isPressed)
+        {
+            _stateMask.SetButton(button);
+            if (!_state.SetButton(button, isPressed)) return false;
+            return NotifyStateChanged();
+        }
+
+        bool IControlProtocolDelegate.HandlePOV(byte povState)
+        {
+            _stateMask.POVEast = _stateMask.POVNorth = _stateMask.POVWest = _stateMask.POVSouth = true;
+            _state.ClearPOV();
+            switch (povState)
+            {
+                default:
+                    return false;
+
+                case 0:
+                    // State is already cleared.
+                    break;
+
+                case 1:
+                    _state.POVNorth = true;
+                    break;
+
+                case 2:
+                    _state.POVNorth = _state.POVEast = true;
+                    break;
+
+                case 3:
+                    _state.POVEast = true;
+                    break;
+
+                case 4:
+                    _state.POVEast = _state.POVSouth = true;
+                    break;
+
+                case 5:
+                    _state.POVSouth = true;
+                    break;
+
+                case 6:
+                    _state.POVSouth = _state.POVWest = true;
+                    break;
+
+                case 7:
+                    _state.POVWest = true;
+                    break;
+
+                case 8:
+                    _state.POVWest = _state.POVNorth = true;
+                    break;
+            }
+
+            return NotifyStateChanged();
         }
     }
 }
