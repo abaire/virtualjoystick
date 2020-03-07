@@ -163,15 +163,16 @@ namespace JoystickUsermodeDriver
         {
             public const int MaxSimultaneousKeys = 7;
 
+            // Ordering must match the AxisIndex for serialization.
             public short X;
             public short Y;
             public short Throttle;
-            public short Rudder;
             public short RX;
             public short RY;
             public short RZ;
             public short Slider;
             public short Dial;
+            public short Rudder;
 
             [MarshalAs(UnmanagedType.I1)]
             public bool POVNorth;

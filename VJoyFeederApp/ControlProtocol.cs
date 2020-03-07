@@ -15,6 +15,8 @@ namespace JoystickUsermodeDriver
         bool HandlePOV(byte povState);
 
         bool HandleEchoRequest(bool echoOn);
+
+        bool HandleGetCurrentState();
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -156,6 +158,9 @@ namespace JoystickUsermodeDriver
 
                 case Command.Echo:
                     return HandleEcho(ref buffer, ref bufferLength);
+
+                case Command.GetCurrentState:
+                    return HandleGetCurrentState(ref buffer, ref bufferLength);
             }
 
             return true;
@@ -254,6 +259,15 @@ namespace JoystickUsermodeDriver
             return true;
         }
 
+        private bool HandleGetCurrentState(ref byte[] buffer, ref int bufferLength)
+        {
+            if (bufferLength < 1) return true;
+            NetworkUtil.ShiftBuffer(ref buffer, ref bufferLength, 1);
+
+            IControlProtocolDelegate d;
+            if (_delegate != null && _delegate.TryGetTarget(out d)) return d.HandleGetCurrentState();
+            return true;
+        }
         private enum State
         {
             WaitingForHandshake,
@@ -267,7 +281,8 @@ namespace JoystickUsermodeDriver
             Axis,
             POV,
 
-            Echo = 0x55
+            Echo = 0x55,
+            GetCurrentState
         }
     }
 }

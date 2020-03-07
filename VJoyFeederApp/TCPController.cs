@@ -426,5 +426,10 @@ namespace JoystickUsermodeDriver
             _echoOn = echoOn;
             return true;
         }
+
+        bool IControlProtocolDelegate.HandleGetCurrentState()
+        {
+            return EchoState();
+        }
     }
 }
