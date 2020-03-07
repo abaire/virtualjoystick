@@ -67,7 +67,7 @@ namespace JoystickUsermodeDriver
 
         void IVirtualDeviceStateWatcher.StateUpdated(in VJoyDriverInterface.VirtualDeviceState state)
         {
-            VJoyDriverInterface.SetVirtualDeviceState(_driverHandle, state, false);
+            VJoyDriverInterface.SetVirtualDeviceState(_driverHandle, state, true);
         }
 
         private void MenuClose_Click(object sender, EventArgs e)
