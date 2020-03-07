@@ -91,6 +91,7 @@
       <DependentUpon>DevicePicker.cs</DependentUpon>
     </Compile>
     <Compile Include="DeviceRegistry.cs" />
+    <Compile Include="TCPController.cs" />
     <Compile Include="VJoyDriverInterface.cs" />
     <Compile Include="MainFrame.cs">
       <SubType>Form</SubType>

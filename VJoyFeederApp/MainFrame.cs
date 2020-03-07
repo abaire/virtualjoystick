@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 
@@ -13,6 +16,8 @@ namespace JoystickUsermodeDriver
 
         //! List of DeviceDescription instances for available physical devices
         private List<DeviceDescription> _deviceEnumeration;
+
+        private TCPController _tcpController;
 
         public MainFrame()
         {
@@ -42,6 +47,9 @@ namespace JoystickUsermodeDriver
             RefreshDisplay();
             BeginFeedingDriver();
 
+            _tcpController = new TCPController();
+            _tcpController.Address = "127.0.0.1";
+            _tcpController.Start();
 #if DEBUG
             MenuShow_Click(null, null);
 #endif
@@ -60,7 +68,6 @@ namespace JoystickUsermodeDriver
         {
             Close();
         }
-
 
         private void MenuShow_Click(object sender, EventArgs e)
         {
@@ -82,6 +89,11 @@ namespace JoystickUsermodeDriver
 
         private void MainFrame_FormClosed(object sender, FormClosedEventArgs e)
         {
+            if (_tcpController != null)
+            {
+                _tcpController.Stop();
+            }
+
             VJoyDriverInterface.DetachFromVirtualJoystickDriver(_driverHandle);
             _driverHandle = VJoyDriverInterface.INVALID_HANDLE_VALUE;
         }
