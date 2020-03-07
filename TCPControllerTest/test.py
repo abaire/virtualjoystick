@@ -221,10 +221,7 @@ def test_invalid_command(connection):
 
     
 def test_keyboard_command(connection):
-    command = struct.pack("!BLB", _COMMAND_KEYCODE, ord('a'), True)
-    connection.sendall(command)
-    ack = connection.recv(1)
-    assert ack == _ACK
+    send(connection, KeyCommand(ord('a'), True))
 
     
 def test_button_command(connection):

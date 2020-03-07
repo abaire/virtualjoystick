@@ -9,7 +9,7 @@ using System.Windows.Forms;
 
 namespace JoystickUsermodeDriver
 {
-    public partial class MainFrame : Form
+    public partial class MainFrame : Form, IVirtualDeviceStateWatcher
     {
         private UInt32 _driverHandle; //!< Handle to the virtual joystick driver instance
         private bool _driverFeedRunning = false;
@@ -48,8 +48,9 @@ namespace JoystickUsermodeDriver
             BeginFeedingDriver();
 
             _tcpController = new TCPController();
-            // _tcpController.Address = "127.0.0.1";
+            _tcpController.StateDelegate = this;
             _tcpController.Start();
+
 #if DEBUG
             MenuShow_Click(null, null);
 #endif
@@ -62,6 +63,11 @@ namespace JoystickUsermodeDriver
             profileList.DataSource = DeviceRegistry.GetProfiles();
             profileList.SelectedItem = selectedItem;
             profileList.SelectedIndexChanged += profileList_SelectedIndexChanged;
+        }
+
+        void IVirtualDeviceStateWatcher.StateUpdated(in VJoyDriverInterface.VirtualDeviceState state)
+        {
+            VJoyDriverInterface.SetVirtualDeviceState(_driverHandle, state);
         }
 
         private void MenuClose_Click(object sender, EventArgs e)

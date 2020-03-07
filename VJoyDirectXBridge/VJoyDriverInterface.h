@@ -108,6 +108,8 @@ typedef struct _DeviceMapping
     BOOL invert; //!< Whether or not we should logically invert the physical state when injecting the virtual device
 } DeviceMapping;
 
+#include <pshpack1.h>
+
 //! \struct VirtualDeviceState
 //! \brief Models the state of the virtual joystick.
 typedef struct _VirtualDeviceState
@@ -116,7 +118,6 @@ typedef struct _VirtualDeviceState
     INT16 y;
 
     INT16 throttle;
-    INT16 rudder;
 
     INT16 rX;
     INT16 rY;
@@ -125,16 +126,20 @@ typedef struct _VirtualDeviceState
     INT16 slider;
     INT16 dial;
 
-    BOOL povNorth;
-    BOOL povEast;
-    BOOL povSouth;
-    BOOL povWest;
+    INT16 rudder;
 
-    UCHAR button[16]; // 128 button bits
+    UINT8 povNorth;
+    UINT8 povEast;
+    UINT8 povSouth;
+    UINT8 povWest;
+
+    UINT8 button[16]; // 128 button bits
 
     UINT8 modifierKeys;
-    DWORD keycodes[7];
+    UINT32 keycodes[7];
 } VirtualDeviceState;
+
+#include <poppack.h>
 
 typedef void (CALLBACK* DeviceEnumCB)(const char* name, const char* guid);
 typedef void (CALLBACK* DeviceInfoCB)(MappingType type, const char* name, UINT32 index);

@@ -156,7 +156,7 @@ namespace JoystickUsermodeDriver
 
         [DllImport("VJoyDirectXBridge.dll", EntryPoint = "SetVirtualDeviceState",
             SetLastError = false)]
-        public static extern bool SetVirtualDeviceState(uint h, VirtualDeviceState state, bool allowOverride);
+        public static extern bool SetVirtualDeviceState(uint h, VirtualDeviceState state, bool allowOverride = true);
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public class VirtualDeviceState
@@ -188,8 +188,8 @@ namespace JoystickUsermodeDriver
 
             public byte ModifierKeys;
 
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MaxSimultaneousKeys)]
-            public uint[] Keycodes;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MaxSimultaneousKeys, ArraySubType = UnmanagedType.U4)]
+            public UInt32[] Keycodes;
 
             public VirtualDeviceState()
             {
@@ -203,12 +203,12 @@ namespace JoystickUsermodeDriver
                 ret.X = IPAddress.HostToNetworkOrder(X);
                 ret.Y = IPAddress.HostToNetworkOrder(Y);
                 ret.Throttle = IPAddress.HostToNetworkOrder(Throttle);
-                ret.Rudder = IPAddress.HostToNetworkOrder(Rudder);
                 ret.RX = IPAddress.HostToNetworkOrder(RX);
                 ret.RY = IPAddress.HostToNetworkOrder(RY);
                 ret.RZ = IPAddress.HostToNetworkOrder(RZ);
                 ret.Slider = IPAddress.HostToNetworkOrder(Slider);
                 ret.Dial = IPAddress.HostToNetworkOrder(Dial);
+                ret.Rudder = IPAddress.HostToNetworkOrder(Rudder);
 
                 ret.POVNorth = POVNorth;
                 ret.POVEast = POVEast;

@@ -56,8 +56,7 @@ namespace JoystickUsermodeDriver
             in VJoyDriverInterface.VirtualDeviceState stateMask)
         {
             Merge(state, stateMask);
-            IVirtualDeviceStateWatcher d;
-            if (_stateDelegate != null && _stateDelegate.TryGetTarget(out d)) d.StateUpdated(_mergedState);
+            NotifyStateChanged();
             return true;
         }
 
@@ -82,6 +81,15 @@ namespace JoystickUsermodeDriver
                 if (keycode == 0) continue;
                 _mergedState.SetKey(keycode, false);
             }
+
+            NotifyStateChanged();
+        }
+
+        private void NotifyStateChanged()
+        {
+            IVirtualDeviceStateWatcher d;
+            if (_stateDelegate != null && _stateDelegate.TryGetTarget(out d)) d.StateUpdated(_mergedState);
+
         }
 
         private void Merge(

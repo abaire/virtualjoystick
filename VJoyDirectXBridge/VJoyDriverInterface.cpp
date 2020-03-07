@@ -21,9 +21,7 @@ static HandleMap g_driverHandles;
 static void ParseGUID(GUID& ret, const char* str);
 static void KeycodeToHIDKeycode(DWORD& keycode);
 
-
 //= F U N C T I O N S =========================================================================
-
 
 BOOL APIENTRY DllMain(
     HMODULE hModule,

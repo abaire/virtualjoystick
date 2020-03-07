@@ -162,8 +162,6 @@ namespace JoystickUsermodeDriver
                 case Command.GetCurrentState:
                     return HandleGetCurrentState(ref buffer, ref bufferLength);
             }
-
-            return true;
         }
 
         private bool HandleKeycode(ref byte[] buffer, ref int bufferLength)
