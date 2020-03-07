@@ -185,11 +185,32 @@ def main(args):
     conn = Connection()
     conn.connect()
 
-    for _ in range(1000):
-        conn.set_button(1)
-        time.sleep(0.5)
-        conn.set_button(1, False)
-        time.sleep(0.5)
-    
+    print("Preparing to test...")
+    time.sleep(2)
+
+    print("Testing buttons...")
+    for i in range(48):
+        print(f"\t{i}")
+        conn.set_button(i)
+        time.sleep(0.025)
+
+        if (i >= 5):
+            conn.set_button(i - 5, False)
+
+    print("Testing axes...")
+    for i in range(-30000, 30000, 800):
+        conn.set_axis(_AXIS_RX, i)
+        time.sleep(0.01)
+
+    print("Testing POV...")
+    for i in range(9):
+        conn.set_pov(i)
+        time.sleep(0.25)
+    conn.set_pov(0)
+
+    print("Cleaning up...")
+    time.sleep(2)
+
+        
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
