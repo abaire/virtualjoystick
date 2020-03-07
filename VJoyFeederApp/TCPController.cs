@@ -31,6 +31,21 @@ namespace JoystickUsermodeDriver
             return true;
         }
 
+        bool IControlProtocolDelegate.HandleAxis(byte axis, ushort position)
+        {
+            return true;
+        }
+
+        bool IControlProtocolDelegate.HandleButton(byte button, bool isPressed)
+        {
+            return true;
+        }
+
+        bool IControlProtocolDelegate.HandlePOV(byte povState)
+        {
+            return true;
+        }
+
         public void Start()
         {
             Stop();
@@ -72,7 +87,7 @@ namespace JoystickUsermodeDriver
             }
             else
             {
-                var controller = new ControlClient(client, self);
+                var controller = new ControlClient(client, self, self);
                 self._clients.Add(controller);
                 controller.Start();
             }
@@ -90,11 +105,11 @@ namespace JoystickUsermodeDriver
         private byte[] _buffer;
         private int _bufferWriteHead;
 
-        internal ControlClient(TcpClient client, ICloseDelegate closeDelegate)
+        internal ControlClient(TcpClient client, ICloseDelegate closeDelegate, IControlProtocolDelegate protocolDelegate)
         {
             _client = client;
             _buffer = new byte[BufferSize];
-            _protocol = new ControlProtocol();
+            _protocol = new ControlProtocol(protocolDelegate);
             _closeDelegate = new WeakReference<ICloseDelegate>(closeDelegate);
         }
 

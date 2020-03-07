@@ -3,12 +3,16 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.DirectX.DirectInput;
 
 namespace JoystickUsermodeDriver
 {
     internal interface IControlProtocolDelegate
     {
         bool HandleKeycode(uint keycode, bool isPressed);
+        bool HandleAxis(byte axis, ushort position);
+        bool HandleButton(byte button, bool isPressed);
+        bool HandlePOV(byte povState);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -55,6 +59,11 @@ namespace JoystickUsermodeDriver
 
         private byte _negotiatedVersion;
         private State _state = State.WaitingForHandshake;
+
+        internal ControlProtocol(IControlProtocolDelegate protocolDelegate)
+        {
+            _delegate = new WeakReference<IControlProtocolDelegate>(protocolDelegate);
+        }
 
         internal bool Handle(ref byte[] buffer, ref int bufferLength)
         {
@@ -135,8 +144,11 @@ namespace JoystickUsermodeDriver
 
             obj.keycode = (uint) IPAddress.NetworkToHostOrder((int) obj.keycode);
 
+
             ShiftBuffer(ref buffer, ref bufferLength, packetSize + 1);
 
+            IControlProtocolDelegate d;
+            if (_delegate != null && _delegate.TryGetTarget(out d)) return d.HandleKeycode(obj.keycode, obj.isPressed != 0);
             return true;
         }
 
@@ -154,6 +166,8 @@ namespace JoystickUsermodeDriver
 
             if (obj.buttonID > 127) return false;
 
+            IControlProtocolDelegate d;
+            if (_delegate != null && _delegate.TryGetTarget(out d)) return d.HandleButton(obj.buttonID, obj.isPressed != 0);
             return true;
         }
 
@@ -170,6 +184,8 @@ namespace JoystickUsermodeDriver
             obj.position = (ushort) IPAddress.NetworkToHostOrder((short) obj.position);
             ShiftBuffer(ref buffer, ref bufferLength, packetSize + 1);
 
+            IControlProtocolDelegate d;
+            if (_delegate != null && _delegate.TryGetTarget(out d)) return d.HandleAxis(obj.axis, obj.position);
             return true;
         }
 
@@ -187,6 +203,8 @@ namespace JoystickUsermodeDriver
 
             if (obj.povState > 8 || obj.povState < 0) return false;
 
+            IControlProtocolDelegate d;
+            if (_delegate != null && _delegate.TryGetTarget(out d)) return d.HandlePOV(obj.povState);
             return true;
         }
 
