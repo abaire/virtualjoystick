@@ -308,7 +308,7 @@ namespace JoystickUsermodeDriver
                             var m = new VJoyDriverInterface.DeviceMapping(mappingKey);
                             mappings.Add(m);
                         }
-                        catch (ArgumentException e)
+                        catch (ArgumentException)
                         {
                             MessageBox.Show(
                                 $"Failed to parse {mappingName} in device {deviceID} in profile {profileKey.Name}. Skipping.",

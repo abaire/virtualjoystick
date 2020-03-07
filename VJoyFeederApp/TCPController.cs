@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 
 namespace JoystickUsermodeDriver
 {
@@ -166,6 +167,11 @@ namespace JoystickUsermodeDriver
         private readonly ControlProtocol _protocol;
         private byte[] _buffer;
         private int _bufferWriteHead;
+        private bool _echoOn = false;
+        private int _writeBufferSize;
+        private byte[] _writeBuffer;
+        private int _writeBufferWriteHead;
+        private bool _writePending = false;
         private readonly VJoyDriverInterface.VirtualDeviceState _state = new VJoyDriverInterface.VirtualDeviceState();
         private readonly VJoyDriverInterface.VirtualDeviceState _stateMask = new VJoyDriverInterface.VirtualDeviceState();
 
@@ -179,6 +185,9 @@ namespace JoystickUsermodeDriver
             _protocol = new ControlProtocol(this);
             _closeDelegate = new WeakReference<ICloseDelegate>(closeDelegate);
             _stateDelegate = new WeakReference<IControlStateWatcher>(stateDelegate);
+
+            _writeBufferSize = Marshal.SizeOf(_state) * 2;
+            _writeBuffer = new byte[_writeBufferSize];
         }
 
         internal void Start()
@@ -208,7 +217,29 @@ namespace JoystickUsermodeDriver
         private bool NotifyStateChanged()
         {
             IControlStateWatcher d;
-            if (_stateDelegate.TryGetTarget(out d)) return d.StateUpdated(_state, _stateMask);
+            if (_stateDelegate.TryGetTarget(out d))
+            {
+                if (!d.StateUpdated(_state, _stateMask)) return false;
+            }
+
+            if (_echoOn)
+            {
+                if (!EchoState()) return false;
+            }
+            return true;
+        }
+
+        private bool EchoState()
+        {
+            var networkOrderedState = _state.NetworkOrdered();
+
+            var messageSize = Marshal.SizeOf(networkOrderedState);
+            IntPtr ptr = Marshal.AllocHGlobal(messageSize);
+            Marshal.StructureToPtr(networkOrderedState, ptr, true);
+            Marshal.Copy(ptr, _writeBuffer, _writeBufferWriteHead, messageSize);
+            Marshal.FreeHGlobal(ptr);
+
+            _writeBufferWriteHead += messageSize;
 
             return true;
         }
@@ -227,6 +258,17 @@ namespace JoystickUsermodeDriver
 
                 // If a command was consumed, send an ack reply.
                 if (_bufferWriteHead != previousBytesAvailable) _client.GetStream().WriteByte(0x01);
+
+                if (_writeBufferWriteHead > 0 && !_writePending)
+                {
+                    _writePending = true;
+                    _client.GetStream().BeginWrite(
+                        _writeBuffer,
+                        0,
+                        _writeBufferWriteHead,
+                        WriteData,
+                        this);
+                }
             }
 
             return true;
@@ -268,6 +310,43 @@ namespace JoystickUsermodeDriver
                 self.NotifyClosed();
             }
             catch (ObjectDisposedException)
+            {
+                self.NotifyClosed();
+            }
+        }
+
+        private static void WriteData(IAsyncResult ar)
+        {
+            var self = (TCPControllerClient) ar.AsyncState;
+            self._writePending = false;
+            if (!self._client.Connected)
+            {
+                self.NotifyClosed();
+                return;
+            }
+
+            var stream = self._client.GetStream();
+            try
+            {
+                var bytesWritten = stream.EndRead(ar);
+                if (bytesWritten == 0)
+                {
+                    self.NotifyClosed();
+                    return;
+                }
+
+                NetworkUtil.ShiftBuffer(
+                    ref self._writeBuffer, 
+                    ref self._writeBufferWriteHead,
+                    bytesWritten);
+
+                if (self._writeBufferWriteHead > 0)
+                {
+                    stream.BeginWrite(self._writeBuffer, 0, self._writeBufferWriteHead, WriteData, self);
+                    self._writePending = true;
+                }
+            }
+            catch (Exception)
             {
                 self.NotifyClosed();
             }
@@ -340,6 +419,12 @@ namespace JoystickUsermodeDriver
             }
 
             return NotifyStateChanged();
+        }
+
+        bool IControlProtocolDelegate.HandleEchoRequest(bool echoOn)
+        {
+            _echoOn = echoOn;
+            return true;
         }
     }
 }

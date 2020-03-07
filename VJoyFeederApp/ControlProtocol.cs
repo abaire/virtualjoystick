@@ -13,6 +13,8 @@ namespace JoystickUsermodeDriver
         bool HandleAxis(byte axis, short position);
         bool HandleButton(byte button, bool isPressed);
         bool HandlePOV(byte povState);
+
+        bool HandleEchoRequest(bool echoOn);
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -51,6 +53,30 @@ namespace JoystickUsermodeDriver
     internal struct POVCommand
     {
         internal byte povState;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    internal struct EchoCommand
+    {
+        internal byte echoState;
+    }
+
+    internal class NetworkUtil
+    {
+        internal static void ShiftBuffer(ref byte[] buffer, ref int bufferLength, int bytesConsumed)
+        {
+            if (bufferLength <= bytesConsumed)
+            {
+                bufferLength = 0;
+                return;
+            }
+
+            var bytesToMove = bufferLength - bytesConsumed;
+            Buffer.BlockCopy(buffer, bytesConsumed, buffer, 0, bytesToMove);
+            bufferLength -= bytesToMove;
+        }
+
+        private NetworkUtil() { }
     }
 
     internal class ControlProtocol
@@ -95,7 +121,7 @@ namespace JoystickUsermodeDriver
             var obj = (Handshake) Marshal.PtrToStructure(gch.AddrOfPinnedObject(), typeof(Handshake));
             gch.Free();
 
-            ShiftBuffer(ref buffer, ref bufferLength, packetSize);
+            NetworkUtil.ShiftBuffer(ref buffer, ref bufferLength, packetSize);
 
             if (!obj.magicBytes.SequenceEqual(Handshake.ExpectedMagicBytes)) return false;
 
@@ -127,6 +153,9 @@ namespace JoystickUsermodeDriver
 
                 case Command.POV:
                     return HandlePOV(ref buffer, ref bufferLength);
+
+                case Command.Echo:
+                    return HandleEcho(ref buffer, ref bufferLength);
             }
 
             return true;
@@ -145,7 +174,7 @@ namespace JoystickUsermodeDriver
             obj.keycode = (uint) IPAddress.NetworkToHostOrder((int) obj.keycode);
 
 
-            ShiftBuffer(ref buffer, ref bufferLength, packetSize + 1);
+            NetworkUtil.ShiftBuffer(ref buffer, ref bufferLength, packetSize + 1);
 
             IControlProtocolDelegate d;
             if (_delegate != null && _delegate.TryGetTarget(out d)) return d.HandleKeycode(obj.keycode, obj.isPressed != 0);
@@ -162,7 +191,7 @@ namespace JoystickUsermodeDriver
             var obj = (ButtonCommand) Marshal.PtrToStructure(gch.AddrOfPinnedObject() + 1, packetType);
             gch.Free();
 
-            ShiftBuffer(ref buffer, ref bufferLength, packetSize + 1);
+            NetworkUtil.ShiftBuffer(ref buffer, ref bufferLength, packetSize + 1);
 
             if (obj.buttonID > 127) return false;
 
@@ -182,7 +211,7 @@ namespace JoystickUsermodeDriver
             gch.Free();
 
             obj.position = IPAddress.NetworkToHostOrder(obj.position);
-            ShiftBuffer(ref buffer, ref bufferLength, packetSize + 1);
+            NetworkUtil.ShiftBuffer(ref buffer, ref bufferLength, packetSize + 1);
 
             IControlProtocolDelegate d;
             if (_delegate != null && _delegate.TryGetTarget(out d)) return d.HandleAxis(obj.axis, obj.position);
@@ -199,7 +228,7 @@ namespace JoystickUsermodeDriver
             var obj = (POVCommand) Marshal.PtrToStructure(gch.AddrOfPinnedObject() + 1, packetType);
             gch.Free();
 
-            ShiftBuffer(ref buffer, ref bufferLength, packetSize + 1);
+            NetworkUtil.ShiftBuffer(ref buffer, ref bufferLength, packetSize + 1);
 
             if (obj.povState > 8 || obj.povState < 0) return false;
 
@@ -208,17 +237,21 @@ namespace JoystickUsermodeDriver
             return true;
         }
 
-        private void ShiftBuffer(ref byte[] buffer, ref int bufferLength, int bytesConsumed)
+        private bool HandleEcho(ref byte[] buffer, ref int bufferLength)
         {
-            if (bufferLength <= bytesConsumed)
-            {
-                bufferLength = 0;
-                return;
-            }
+            var packetType = typeof(EchoCommand);
+            var packetSize = Marshal.SizeOf(packetType);
+            if (bufferLength < packetSize + 1) return true;
 
-            var bytesToMove = bufferLength - bytesConsumed;
-            Buffer.BlockCopy(buffer, bytesConsumed, buffer, 0, bytesToMove);
-            bufferLength -= bytesToMove;
+            var gch = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+            var obj = (EchoCommand)Marshal.PtrToStructure(gch.AddrOfPinnedObject() + 1, packetType);
+            gch.Free();
+
+            NetworkUtil.ShiftBuffer(ref buffer, ref bufferLength, packetSize + 1);
+
+            IControlProtocolDelegate d;
+            if (_delegate != null && _delegate.TryGetTarget(out d)) return d.HandleEchoRequest(obj.echoState != 0);
+            return true;
         }
 
         private enum State
@@ -232,7 +265,9 @@ namespace JoystickUsermodeDriver
             Keycode = 0x10,
             Button,
             Axis,
-            POV
+            POV,
+
+            Echo = 0x55
         }
     }
 }

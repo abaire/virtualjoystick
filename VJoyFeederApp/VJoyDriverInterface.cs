@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Runtime.InteropServices;
 using Microsoft.DirectX.DirectInput;
 using Microsoft.Win32;
@@ -172,9 +173,13 @@ namespace JoystickUsermodeDriver
             public short Slider;
             public short Dial;
 
-            public bool POVEast;
+            [MarshalAs(UnmanagedType.I1)]
             public bool POVNorth;
+            [MarshalAs(UnmanagedType.I1)]
+            public bool POVEast;
+            [MarshalAs(UnmanagedType.I1)]
             public bool POVSouth;
+            [MarshalAs(UnmanagedType.I1)]
             public bool POVWest;
 
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
@@ -189,6 +194,35 @@ namespace JoystickUsermodeDriver
             {
                 Button = new byte[16];
                 Keycodes = new uint[7];
+            }
+
+            public VirtualDeviceState NetworkOrdered()
+            {
+                var ret = new VirtualDeviceState();
+                ret.X = IPAddress.HostToNetworkOrder(X);
+                ret.Y = IPAddress.HostToNetworkOrder(Y);
+                ret.Throttle = IPAddress.HostToNetworkOrder(Throttle);
+                ret.Rudder = IPAddress.HostToNetworkOrder(Rudder);
+                ret.RX = IPAddress.HostToNetworkOrder(RX);
+                ret.RY = IPAddress.HostToNetworkOrder(RY);
+                ret.RZ = IPAddress.HostToNetworkOrder(RZ);
+                ret.Slider = IPAddress.HostToNetworkOrder(Slider);
+                ret.Dial = IPAddress.HostToNetworkOrder(Dial);
+
+                ret.POVNorth = POVNorth;
+                ret.POVEast = POVEast;
+                ret.POVSouth = POVSouth;
+                ret.POVWest = POVWest;
+
+                Buffer.BlockCopy(Button, 0, ret.Button, 0, 16);
+                ret.ModifierKeys = ModifierKeys;
+
+                for (var i = 0; i < MaxSimultaneousKeys; ++i)
+                {
+                    ret.Keycodes[i] = (uint)IPAddress.NetworkToHostOrder((int)Keycodes[i]);
+                }
+
+                return ret;
             }
 
             public bool SetButton(byte buttonNumber, bool isOn = true)
