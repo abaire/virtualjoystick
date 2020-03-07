@@ -11,3 +11,7 @@ x64/
 
 app/Debug
 driver/Debug
+
+.idea
+__pycache__/
+

@@ -303,8 +303,19 @@ namespace JoystickUsermodeDriver
                             return null;
                         }
 
-                        var m = new VJoyDriverInterface.DeviceMapping(mappingKey);
-                        mappings.Add(m);
+                        try
+                        {
+                            var m = new VJoyDriverInterface.DeviceMapping(mappingKey);
+                            mappings.Add(m);
+                        }
+                        catch (ArgumentException e)
+                        {
+                            MessageBox.Show(
+                                $"Failed to parse {mappingName} in device {deviceID} in profile {profileKey.Name}. Skipping.",
+                                "Registry Error",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Exclamation);
+                        }
                     }
                 }
 

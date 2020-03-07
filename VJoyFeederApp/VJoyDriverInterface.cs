@@ -1,28 +1,24 @@
-using Microsoft.Win32;
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
-using Microsoft.DirectX.DirectInput;
+using Microsoft.Win32;
 
 namespace JoystickUsermodeDriver
 {
     public class VJoyDriverInterface
     {
-        // Keep in sync with VJoyDriverInterface.h
+        public delegate void DeviceEnumCallback(
+            [MarshalAs(UnmanagedType.LPStr)] string name,
+            [MarshalAs(UnmanagedType.LPStr)] string guid);
 
-        public const int MaxVirtualButtons = 128;
-        public const int MaxVirtualPOVs = 1;
-
-        public enum MappingType
-        {
-            Axis = 0,
-            POV,
-            Button,
-            Key
-        }
+        public delegate void DeviceInfoCallback(
+            MappingType elementType,
+            [MarshalAs(UnmanagedType.LPStr)] string name,
+            uint srcIndex);
 
         public enum AxisIndex
         {
-            axis_none = (int)UNMAPPED_INDEX,
+            axis_none = (int) UNMAPPED_INDEX,
             axis_x = 0,
             axis_y,
             axis_throttle,
@@ -33,29 +29,17 @@ namespace JoystickUsermodeDriver
             axis_dial,
 
             // Additional axes are not available in DIJOYSTATE2.
-            axis_rudder,
+            axis_rudder
         }
-
-        // Keep in sync with VJoyDriverInterface.h
-        private const UInt32 UNMAPPED_INDEX = 0xFFFF;
-
-        private const Int32 MODIFIER_LEFT_CTRL = (1 << 0);
-        private const Int32 MODIFIER_LEFT_SHIFT = (1 << 1);
-        private const Int32 MODIFIER_LEFT_ALT = (1 << 2);
-        private const Int32 MODIFIER_LEFT_GUI = (1 << 3);
-        private const Int32 MODIFIER_RIGHT_CTRL = (1 << 4);
-        private const Int32 MODIFIER_RIGHT_SHIFT = (1 << 5);
-        private const Int32 MODIFIER_RIGHT_ALT = (1 << 6);
-        private const Int32 MODIFIER_RIGHT_GUI = (1 << 7);
 
         public enum Keycode
         {
             Escape = 0x1B,
-            Enter = (int)'\n',
+            Enter = (int) '\n',
             Backspace = 0x08,
-            Tab = (int)'\t',
-            Space = (int)' ',
-            
+            Tab = (int) '\t',
+            Space = (int) ' ',
+
             F1 = 0x013A,
             F2 = 0x013B,
             F3 = 0x013C,
@@ -85,176 +69,230 @@ namespace JoystickUsermodeDriver
             Keypad_9 = 0x0161,
             Keypad_0 = 0x0162,
 
-            LeftCtrl = (MODIFIER_LEFT_CTRL << 16),
-            LeftShift = (MODIFIER_LEFT_SHIFT << 16),
-            LeftAlt = (MODIFIER_LEFT_ALT << 16),
-            LeftGUI = (MODIFIER_LEFT_GUI << 16),
-            RightCtrl = (MODIFIER_RIGHT_CTRL << 16),
-            RightShift = (MODIFIER_RIGHT_SHIFT << 16),
-            RightAlt = (MODIFIER_RIGHT_ALT << 16),
-            RightGUI = (MODIFIER_RIGHT_GUI << 16),
+            LeftCtrl = MODIFIER_LEFT_CTRL << 16,
+            LeftShift = MODIFIER_LEFT_SHIFT << 16,
+            LeftAlt = MODIFIER_LEFT_ALT << 16,
+            LeftGUI = MODIFIER_LEFT_GUI << 16,
+            RightCtrl = MODIFIER_RIGHT_CTRL << 16,
+            RightShift = MODIFIER_RIGHT_SHIFT << 16,
+            RightAlt = MODIFIER_RIGHT_ALT << 16,
+            RightGUI = MODIFIER_RIGHT_GUI << 16
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        public enum MappingType
+        {
+            Axis = 0,
+            POV,
+            Button,
+            Key
+        }
+        // Keep in sync with VJoyDriverInterface.h
+
+        public const int MaxVirtualButtons = 128;
+        public const int MaxVirtualPOVs = 1;
+
+        // Keep in sync with VJoyDriverInterface.h
+        private const uint UNMAPPED_INDEX = 0xFFFF;
+
+        private const int MODIFIER_LEFT_CTRL = 1 << 0;
+        private const int MODIFIER_LEFT_SHIFT = 1 << 1;
+        private const int MODIFIER_LEFT_ALT = 1 << 2;
+        private const int MODIFIER_LEFT_GUI = 1 << 3;
+        private const int MODIFIER_RIGHT_CTRL = 1 << 4;
+        private const int MODIFIER_RIGHT_SHIFT = 1 << 5;
+        private const int MODIFIER_RIGHT_ALT = 1 << 6;
+        private const int MODIFIER_RIGHT_GUI = 1 << 7;
+
+        public static uint INVALID_HANDLE_VALUE = 0xFFFFFFFF;
+
+        [DllImport("VJoyDirectXBridge.dll", EntryPoint = "AttachToVirtualJoystickDriver",
+            SetLastError = false)]
+        public static extern uint AttachToVirtualJoystickDriver();
+
+        [DllImport("VJoyDirectXBridge.dll", EntryPoint = "BeginDriverUpdateLoop",
+            SetLastError = false)]
+        public static extern bool BeginDriverUpdateLoop(uint h);
+
+        [DllImport("VJoyDirectXBridge.dll", EntryPoint = "EndDriverUpdateLoop",
+            SetLastError = false)]
+        public static extern bool EndDriverUpdateLoop(uint h);
+
+        [DllImport("VJoyDirectXBridge.dll",
+            EntryPoint = "DetachFromVirtualJoystickDriver", SetLastError = false)]
+        public static extern bool DetachFromVirtualJoystickDriver(uint h);
+
+        [DllImport("VJoyDirectXBridge.dll", EntryPoint = "SetDeviceMapping",
+            SetLastError = false)]
+        public static extern bool SetDeviceMapping(
+            uint h,
+            [MarshalAs(UnmanagedType.LPStr)] string deviceGUID,
+            DeviceMapping[] mappings,
+            int mappingCount);
+
+        [DllImport("VJoyDirectXBridge.dll", EntryPoint = "ClearDeviceMappings",
+            SetLastError = false)]
+        public static extern bool ClearDeviceMappings(uint h);
+
+        [DllImport("VJoyDirectXBridge.dll", EntryPoint = "EnumerateDevices",
+            SetLastError = false)]
+        public static extern bool EnumerateDevices(uint h, DeviceEnumCallback cb);
+
+        [DllImport("VJoyDirectXBridge.dll", EntryPoint = "GetDeviceInfo",
+            SetLastError = false)]
+        public static extern bool GetDeviceInfo(
+            uint h,
+            [MarshalAs(UnmanagedType.LPStr)] string deviceGUID,
+            DeviceInfoCallback cb);
+
+        [DllImport("VJoyDirectXBridge.dll", EntryPoint = "UpdateLoopDelay",
+            SetLastError = false)]
+        public static extern uint UpdateLoopDelay(uint h);
+
+        [DllImport("VJoyDirectXBridge.dll", EntryPoint = "SetUpdateLoopDelay",
+            SetLastError = false)]
+        public static extern bool SetUpdateLoopDelay(uint h, uint delay);
+
+        [DllImport("VJoyDirectXBridge.dll", EntryPoint = "SetVirtualDeviceState",
+            SetLastError = false)]
+        public static extern bool SetVirtualDeviceState(uint h, VirtualDeviceState state, bool allowOverride);
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public class VirtualDeviceState
         {
             private const int MaxSimultaneousKeys = 7;
 
-            public Int16 X;
-            public Int16 Y;
-
-            public Int16 Throttle;
-            public Int16 Rudder;
-
-            public Int16 RX;
-            public Int16 RY;
-            public Int16 RZ;
-
-            public Int16 Slider;
-            public Int16 Dial;
-
-            public bool POVNorth;
-            public bool POVEast;
-            public bool POVSouth;
-            public bool POVWest;
-
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
             public byte[] Button; // 128 button bits
 
-            public byte ModifierKeys;
+            public short Dial;
+
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = MaxSimultaneousKeys)]
-            public UInt32[] Keycodes;
+            public uint[] Keycodes;
+
+            public byte ModifierKeys;
+            public bool POVEast;
+
+            public bool POVNorth;
+            public bool POVSouth;
+            public bool POVWest;
+            public short Rudder;
+
+            public short RX;
+            public short RY;
+            public short RZ;
+
+            public short Slider;
+
+            public short Throttle;
+
+            public short X;
+            public short Y;
 
             public VirtualDeviceState()
             {
                 Button = new byte[16];
-                Keycodes = new UInt32[7];
+                Keycodes = new uint[7];
             }
 
             public void SetButton(byte buttonNumber, bool isOn = true)
             {
-                if (buttonNumber > 128) { return; }
+                if (buttonNumber > 128) return;
 
-                int offset = buttonNumber >> 3;
-                byte bit = (byte)(1 << (buttonNumber & 0x07));
+                var offset = buttonNumber >> 3;
+                var bit = (byte) (1 << (buttonNumber & 0x07));
 
                 if (isOn)
-                {
                     Button[offset] |= bit;
-                }
                 else
-                {
                     Button[offset] &= (byte) ~bit;
-                }
             }
 
             public bool SetKey(char key, bool isDown = true)
             {
-                return SetKey((UInt32)key, isDown);
+                return SetKey((uint) key, isDown);
             }
 
             public bool SetKey(Keycode key, bool isDown = true)
             {
-                return SetKey((UInt32) key, isDown);
+                return SetKey((uint) key, isDown);
             }
 
-            public bool SetKey(UInt32 key, bool isDown = true)
+            public bool SetKey(uint key, bool isDown = true)
             {
                 if (isDown)
                 {
                     for (var i = 0; i < MaxSimultaneousKeys; ++i)
-                    {
                         if (Keycodes[i] == 0)
                         {
                             Keycodes[i] = key;
                             return true;
                         }
-                    }
                 }
                 else
                 {
                     for (var i = 0; i < MaxSimultaneousKeys; ++i)
-                    {
                         if (Keycodes[i] == key)
                         {
                             Keycodes[i] = 0;
                             return true;
                         }
-                    }
                 }
 
                 return false;
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct DeviceMapping
         {
-            public const UInt32 Unmapped = (UInt32) AxisIndex.axis_none;
+            public const uint Unmapped = (uint) AxisIndex.axis_none;
 
-            private MappingType _virtualDeviceType; //!< The type of the target virtual joystick state
-            private UInt32 _virtualDeviceIndex; //!< The index of the target virtual joystick state
+            private readonly int _invert;
 
-            private MappingType _sourceType; //!< The type of the source state
-            private UInt32 _sourceIndex; //!< The index of the source joystick state
+            public MappingType VirtualDeviceType { get; }
 
-            private Int32 _invert;
-
-            public MappingType VirtualDeviceType => _virtualDeviceType;
-
-            public UInt32 VirtualDeviceIndex => _virtualDeviceIndex;
+            public uint VirtualDeviceIndex { get; }
 
             public string VirtualDeviceName
             {
                 get
                 {
-                    if (_virtualDeviceType == MappingType.Axis)
-                    {
-                        return VirtualDeviceIndexName;
-                    }
+                    if (VirtualDeviceType == MappingType.Axis) return VirtualDeviceIndexName;
 
-                    if (_sourceType == MappingType.POV && _virtualDeviceType == MappingType.Button)
-                    {
+                    if (SourceType == MappingType.POV && VirtualDeviceType == MappingType.Button)
                         return $"Buttons {VirtualDeviceIndex + 1} - {VirtualDeviceIndex + 4}";
-                    }
 
-                    if (_virtualDeviceType == MappingType.Key)
-                    {
-                        return $"{(char) (VirtualDeviceIndex & 0xFF)}";
-                    }
+                    if (VirtualDeviceType == MappingType.Key) return $"{(char) (VirtualDeviceIndex & 0xFF)}";
 
                     return $"{VirtualDeviceType} {VirtualDeviceIndexName}";
                 }
             }
 
-            public string VirtualDeviceIndexName => IndexName(_virtualDeviceType, _virtualDeviceIndex);
+            public string VirtualDeviceIndexName => IndexName(VirtualDeviceType, VirtualDeviceIndex);
 
-            public MappingType SourceType => _sourceType;
+            public MappingType SourceType { get; }
 
             public string SourceName
             {
                 get
                 {
-                    if (_sourceType == MappingType.Axis)
-                    {
-                        return SourceIndexName;
-                    }
+                    if (SourceType == MappingType.Axis) return SourceIndexName;
 
                     return $"{SourceType} {SourceIndexName}";
                 }
             }
 
-            public string SourceIndexName => IndexName(_sourceType, _sourceIndex);
+            public string SourceIndexName => IndexName(SourceType, SourceIndex);
 
-            public UInt32 SourceIndex => _sourceIndex;
+            public uint SourceIndex { get; }
 
             public bool Invert => _invert != 0;
 
-            private string IndexName(MappingType type, UInt32 index)
+            private string IndexName(MappingType type, uint index)
             {
                 if (type == MappingType.Axis)
                 {
-                    AxisIndex axisIndex = (AxisIndex) index;
+                    var axisIndex = (AxisIndex) index;
                     return axisIndex.ToString();
                 }
 
@@ -263,16 +301,16 @@ namespace JoystickUsermodeDriver
 
             public DeviceMapping(
                 MappingType virtualDeviceType,
-                UInt32 virtualDeviceIndex,
+                uint virtualDeviceIndex,
                 MappingType sourceType,
-                UInt32 sourceIndex,
+                uint sourceIndex,
                 bool invert = false)
             {
-                this._virtualDeviceType = virtualDeviceType;
-                this._virtualDeviceIndex = virtualDeviceIndex;
-                this._sourceType = sourceType;
-                this._sourceIndex = sourceIndex;
-                this._invert = invert ? 1 : 0;
+                VirtualDeviceType = virtualDeviceType;
+                VirtualDeviceIndex = virtualDeviceIndex;
+                SourceType = sourceType;
+                SourceIndex = sourceIndex;
+                _invert = invert ? 1 : 0;
             }
 
             public DeviceMapping(
@@ -281,7 +319,7 @@ namespace JoystickUsermodeDriver
                 MappingType sourceType,
                 AxisIndex srcIndex,
                 bool invert = false)
-                : this(virtualDeviceType, (UInt32) destIndex, sourceType, (UInt32) srcIndex, invert)
+                : this(virtualDeviceType, (uint) destIndex, sourceType, (uint) srcIndex, invert)
             {
             }
 
@@ -289,13 +327,13 @@ namespace JoystickUsermodeDriver
                 MappingType destAndSrcBlock,
                 AxisIndex destAndSrcIndex,
                 bool invert = false)
-                : this(destAndSrcBlock, (UInt32) destAndSrcIndex, destAndSrcBlock, (UInt32) destAndSrcIndex, invert)
+                : this(destAndSrcBlock, (uint) destAndSrcIndex, destAndSrcBlock, (uint) destAndSrcIndex, invert)
             {
             }
 
             public DeviceMapping(
                 MappingType destAndSrcBlock,
-                UInt32 destAndSrcIndex,
+                uint destAndSrcIndex,
                 bool invert = false)
                 : this(destAndSrcBlock, destAndSrcIndex, destAndSrcBlock, destAndSrcIndex, invert)
             {
@@ -304,186 +342,116 @@ namespace JoystickUsermodeDriver
             public DeviceMapping(RegistryKey k)
             {
                 var enumType = typeof(MappingType);
-                _virtualDeviceType = (MappingType) Enum.Parse(
+                VirtualDeviceType = (MappingType) Enum.Parse(
                     enumType,
-                    k.GetValue(DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_TYPE, 0).ToString());
+                    k.GetValue(DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_TYPE, 0).ToString(),
+                    true);
 
-                _virtualDeviceIndex = ReadDeviceIndex(
+                VirtualDeviceIndex = ReadDeviceIndex(
                     k,
                     DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_INDEX,
-                    _virtualDeviceType);
+                    VirtualDeviceType);
 
 
-                _sourceType = (MappingType) Enum.Parse(
+                SourceType = (MappingType) Enum.Parse(
                     enumType,
-                    k.GetValue(DeviceRegistry.REGISTRY_VALUE_SOURCE_TYPE, 0).ToString());
+                    k.GetValue(DeviceRegistry.REGISTRY_VALUE_SOURCE_TYPE, 0).ToString(),
+                    true);
 
-                _sourceIndex = ReadDeviceIndex(
+                SourceIndex = ReadDeviceIndex(
                     k,
                     DeviceRegistry.REGISTRY_VALUE_SOURCE_INDEX,
-                    _sourceType);
+                    SourceType);
 
 
-                this._invert = Convert.ToInt32(k.GetValue(DeviceRegistry.REGISTRY_VALUE_INVERT, 0));
+                _invert = Convert.ToInt32(k.GetValue(DeviceRegistry.REGISTRY_VALUE_INVERT, 0));
             }
 
-            private static UInt32 ReadDeviceIndex(RegistryKey k, string valueName, MappingType mappingType)
+            private static uint ReadDeviceIndex(RegistryKey k, string valueName, MappingType mappingType)
             {
                 var value = k.GetValue(valueName, 0);
 
                 if (mappingType == MappingType.Axis)
-                {
                     try
                     {
                         var kind = k.GetValueKind(valueName);
                         if (kind == RegistryValueKind.String)
                         {
-                            var axisIndex = (AxisIndex) Enum.Parse(typeof(AxisIndex), value.ToString());
-                            return (UInt32) axisIndex;
+                            var axisIndex = (AxisIndex) Enum.Parse(typeof(AxisIndex), value.ToString(), true);
+                            return (uint) axisIndex;
                         }
                     }
-                    catch (System.IO.IOException)
+                    catch (IOException)
                     {
                         // Return a default mapping.
-                        return (UInt32)AxisIndex.axis_none;
+                        return (uint) AxisIndex.axis_none;
                     }
-                }
 
                 if (mappingType == MappingType.Key)
-                {
                     try
                     {
                         var kind = k.GetValueKind(valueName);
                         if (kind == RegistryValueKind.String)
                         {
-                            UInt32 keycode = 0x04;
+                            uint keycode = 0x04;
                             var stringVal = value.ToString();
                             // Single char strings are assumed to be printable and mapped to ASCII.
                             if (stringVal.Length == 1)
                             {
-                                keycode = (UInt32)stringVal[0];
-                                if (keycode < 0x80)
-                                {
-                                    return keycode;
-                                }
+                                keycode = stringVal[0];
+                                if (keycode < 0x80) return keycode;
 
                                 return 0x04;
                             }
-                            keycode = (UInt32)(Keycode)Enum.Parse(typeof(Keycode), value.ToString());
-                            return (UInt32)keycode;
+
+                            keycode = (uint) (Keycode) Enum.Parse(typeof(Keycode), value.ToString(), true);
+                            return keycode;
                         }
                     }
-                    catch (System.IO.IOException)
+                    catch (IOException)
                     {
                         // Return a default mapping.
                         return 0x04;
                     }
-                }
 
                 return Convert.ToUInt32(value);
             }
 
             public void WriteToRegistry(RegistryKey k)
             {
-                k.SetValue(DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_TYPE, _virtualDeviceType,
+                k.SetValue(DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_TYPE, VirtualDeviceType,
                     RegistryValueKind.String);
                 WriteDeviceIndex(
                     k,
                     DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_INDEX,
-                    _virtualDeviceIndex,
-                    _virtualDeviceType);
+                    VirtualDeviceIndex,
+                    VirtualDeviceType);
 
-                k.SetValue(DeviceRegistry.REGISTRY_VALUE_SOURCE_TYPE, _sourceType, RegistryValueKind.String);
+                k.SetValue(DeviceRegistry.REGISTRY_VALUE_SOURCE_TYPE, SourceType, RegistryValueKind.String);
                 WriteDeviceIndex(
                     k,
                     DeviceRegistry.REGISTRY_VALUE_SOURCE_INDEX,
-                    _sourceIndex,
-                    _sourceType);
+                    SourceIndex,
+                    SourceType);
 
                 k.SetValue(DeviceRegistry.REGISTRY_VALUE_INVERT, _invert, RegistryValueKind.DWord);
             }
 
-            private static void WriteDeviceIndex(RegistryKey k, string valueName, UInt32 index, MappingType type)
+            private static void WriteDeviceIndex(RegistryKey k, string valueName, uint index, MappingType type)
             {
                 if (type != MappingType.Axis)
-                {
                     k.SetValue(valueName, index, RegistryValueKind.DWord);
-                }
                 else
-                {
                     k.SetValue(valueName, (AxisIndex) index, RegistryValueKind.String);
-                }
             }
 
             public void WriteToRegistry(RegistryKey k, string subkeyName)
             {
                 using (var subkey = k.CreateSubKey(subkeyName, true))
                 {
-                    this.WriteToRegistry(subkey);
+                    WriteToRegistry(subkey);
                 }
             }
         }
-
-        public static UInt32 INVALID_HANDLE_VALUE = (UInt32) 0xFFFFFFFF;
-
-        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "AttachToVirtualJoystickDriver",
-            SetLastError = false)]
-        public static extern UInt32 AttachToVirtualJoystickDriver();
-
-        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "BeginDriverUpdateLoop",
-            SetLastError = false)]
-        public static extern bool BeginDriverUpdateLoop(UInt32 h);
-
-        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "EndDriverUpdateLoop",
-            SetLastError = false)]
-        public static extern bool EndDriverUpdateLoop(UInt32 h);
-
-        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll",
-            EntryPoint = "DetachFromVirtualJoystickDriver", SetLastError = false)]
-        public static extern bool DetachFromVirtualJoystickDriver(UInt32 h);
-
-        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "SetDeviceMapping",
-            SetLastError = false)]
-        public static extern bool SetDeviceMapping(
-            UInt32 h,
-            [MarshalAs(UnmanagedType.LPStr)] string deviceGUID,
-            DeviceMapping[] mappings,
-            Int32 mappingCount);
-
-        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "ClearDeviceMappings",
-            SetLastError = false)]
-        public static extern bool ClearDeviceMappings(UInt32 h);
-
-        public delegate void DeviceEnumCallback(
-            [MarshalAs(UnmanagedType.LPStr)] string name,
-            [MarshalAs(UnmanagedType.LPStr)] string guid);
-
-        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "EnumerateDevices",
-            SetLastError = false)]
-        public static extern bool EnumerateDevices(UInt32 h, DeviceEnumCallback cb);
-
-        public delegate void DeviceInfoCallback(
-            MappingType elementType,
-            [MarshalAs(UnmanagedType.LPStr)] string name,
-            UInt32 srcIndex);
-
-        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "GetDeviceInfo",
-            SetLastError = false)]
-        public static extern bool GetDeviceInfo(
-            UInt32 h,
-            [MarshalAs(UnmanagedType.LPStr)] string deviceGUID,
-            DeviceInfoCallback cb);
-
-        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "UpdateLoopDelay",
-            SetLastError = false)]
-        public static extern UInt32 UpdateLoopDelay(UInt32 h);
-
-        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "SetUpdateLoopDelay",
-            SetLastError = false)]
-        public static extern bool SetUpdateLoopDelay(UInt32 h, UInt32 delay);
-
-        [System.Runtime.InteropServices.DllImport("VJoyDirectXBridge.dll", EntryPoint = "SetVirtualDeviceState",
-            SetLastError = false)]
-        public static extern bool SetVirtualDeviceState(UInt32 h, VirtualDeviceState state, bool allowOverride);
     }
 }
