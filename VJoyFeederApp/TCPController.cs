@@ -47,9 +47,18 @@ namespace JoystickUsermodeDriver
 
         void ICloseDelegate.ControllerClientClosed(TCPControllerClient client)
         {
-            Unmerge(client.State, client.StateMask);
-            NotifyStateChanged();
             _clients.Remove(client);
+
+            if (_clients.Count == 0)
+            {
+                _mergedState = new VJoyDriverInterface.VirtualDeviceState();
+            }
+            else
+            {
+                Unmerge(client.State, client.StateMask);
+            }
+
+            NotifyStateChanged();
         }
 
         bool IControlStateWatcher.StateUpdated(
