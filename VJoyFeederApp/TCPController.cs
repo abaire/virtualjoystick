@@ -48,6 +48,7 @@ namespace JoystickUsermodeDriver
         void ICloseDelegate.ControllerClientClosed(TCPControllerClient client)
         {
             Unmerge(client.State, client.StateMask);
+            NotifyStateChanged();
             _clients.Remove(client);
         }
 
@@ -95,6 +96,11 @@ namespace JoystickUsermodeDriver
                 _mergedState.Button[i] |= (byte) (state.Button[i] & stateMask.Button[i]);
             }
 
+            foreach (var keycode in stateMask.Keycodes)
+            {
+                _mergedState.SetKey(keycode, false);
+            }
+
             foreach (var keycode in state.Keycodes)
             {
                 if (keycode == 0) continue;
@@ -123,13 +129,16 @@ namespace JoystickUsermodeDriver
                 _mergedState.Button[i] &= (byte) ~stateMask.Button[i];
             }
 
+            foreach (var keycode in stateMask.Keycodes)
+            {
+                _mergedState.SetKey(keycode, false);
+            }
+
             foreach (var keycode in state.Keycodes)
             {
                 if (keycode == 0) continue;
                 _mergedState.SetKey(keycode, false);
             }
-
-            NotifyStateChanged();
         }
 
         public void Start()
@@ -373,6 +382,7 @@ namespace JoystickUsermodeDriver
 
         bool IControlProtocolDelegate.HandleKeycode(uint keycode, bool isPressed)
         {
+            _stateMask.SetKey(keycode, !isPressed);
             if (!_state.SetKey(keycode, isPressed)) return false;
             return NotifyStateChanged();
         }

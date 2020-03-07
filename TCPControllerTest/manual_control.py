@@ -144,6 +144,10 @@ class Connection:
 
         self._handshake()
 
+    def disconnect(self):
+        self._connection.shutdown(2)
+        self._connection.close()
+
     def send(self, command):
         print(f"Send: {command}")
         self._connection.sendall(command)
@@ -185,7 +189,7 @@ def main(args):
     conn = Connection()
     conn.connect()
 
-    print("Preparing to test...")
+    print("Preparing to test, focus Game Controller properties...")
     time.sleep(2)
 
     print("Testing buttons...")
@@ -208,8 +212,21 @@ def main(args):
         time.sleep(0.25)
     conn.set_pov(0)
 
+    print("Waiting 5 seconds before keycode test. Focus an editable buffer.")
+    time.sleep(5)
+
+    conn.set_key(ord('h'))
+    time.sleep(1)
+    conn.set_key(ord('h'), False)
+    
+    conn.set_key(ord('i'))
+    time.sleep(1)
+    conn.set_key(ord('i'), False)
+    
+    
     print("Cleaning up...")
     time.sleep(2)
+    conn.disconnect()
 
         
 if __name__ == '__main__':
