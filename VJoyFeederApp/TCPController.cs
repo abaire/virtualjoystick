@@ -60,31 +60,6 @@ namespace JoystickUsermodeDriver
             return true;
         }
 
-        private void Unmerge(
-            in VJoyDriverInterface.VirtualDeviceState state,
-            in VJoyDriverInterface.VirtualDeviceState stateMask)
-        {
-            if (stateMask.X != 0) _mergedState.X = 0;
-            if (stateMask.Y != 0) _mergedState.Y = 0;
-            if (stateMask.Throttle != 0) _mergedState.Throttle = 0;
-            if (stateMask.Rudder != 0) _mergedState.Rudder = 0;
-            if (stateMask.RX != 0) _mergedState.RX = 0;
-            if (stateMask.RY != 0) _mergedState.RY = 0;
-            if (stateMask.RZ != 0) _mergedState.RZ = 0;
-            if (stateMask.Slider != 0) _mergedState.Slider = 0;
-            if (stateMask.Dial != 0) _mergedState.Dial = 0;
-
-            if (stateMask.POVNorth) _mergedState.ClearPOV();
-
-            foreach (var keycode in state.Keycodes)
-            {
-                if (keycode == 0) continue;
-                _mergedState.SetKey(keycode, false);
-            }
-
-            NotifyStateChanged();
-        }
-
         private void NotifyStateChanged()
         {
             IVirtualDeviceStateWatcher d;
@@ -114,11 +89,47 @@ namespace JoystickUsermodeDriver
                 _mergedState.POVWest = state.POVWest;
             }
 
+            for (var i = 0; i < stateMask.Button.Length; ++i)
+            {
+                _mergedState.Button[i] &= (byte)~stateMask.Button[i];
+                _mergedState.Button[i] |= (byte) (state.Button[i] & stateMask.Button[i]);
+            }
+
             foreach (var keycode in state.Keycodes)
             {
                 if (keycode == 0) continue;
                 _mergedState.SetKey(keycode);
             }
+        }
+
+        private void Unmerge(
+            in VJoyDriverInterface.VirtualDeviceState state,
+            in VJoyDriverInterface.VirtualDeviceState stateMask)
+        {
+            if (stateMask.X != 0) _mergedState.X = 0;
+            if (stateMask.Y != 0) _mergedState.Y = 0;
+            if (stateMask.Throttle != 0) _mergedState.Throttle = 0;
+            if (stateMask.Rudder != 0) _mergedState.Rudder = 0;
+            if (stateMask.RX != 0) _mergedState.RX = 0;
+            if (stateMask.RY != 0) _mergedState.RY = 0;
+            if (stateMask.RZ != 0) _mergedState.RZ = 0;
+            if (stateMask.Slider != 0) _mergedState.Slider = 0;
+            if (stateMask.Dial != 0) _mergedState.Dial = 0;
+
+            if (stateMask.POVNorth) _mergedState.ClearPOV();
+
+            for (var i = 0; i < stateMask.Button.Length; ++i)
+            {
+                _mergedState.Button[i] &= (byte) ~stateMask.Button[i];
+            }
+
+            foreach (var keycode in state.Keycodes)
+            {
+                if (keycode == 0) continue;
+                _mergedState.SetKey(keycode, false);
+            }
+
+            NotifyStateChanged();
         }
 
         public void Start()

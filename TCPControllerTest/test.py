@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import pytest
 import select
 import socket
@@ -189,7 +187,7 @@ def ButtonCommand(button, is_on=True):
 
     
 def AxisCommand(axis, value):
-    return struct.pack("!BhB", _COMMAND_AXIS, value, axis)
+    return struct.pack("!BBh", _COMMAND_AXIS, axis, value)
 
 
 def POVCommand(state):
@@ -239,14 +237,14 @@ def test_button_command_out_of_range(connection):
 
     
 def test_axis_command(connection):
-    command = struct.pack("!BhB", _COMMAND_AXIS, 32767, 3)
+    command = AxisCommand(_AXIS_THROTTLE, 32767)
     connection.sendall(command)
     ack = connection.recv(1)
     assert ack == _ACK
 
     
 def test_axis_command_negative(connection):
-    command = struct.pack("!BhB", _COMMAND_AXIS, -32767, 3)
+    command = AxisCommand(_AXIS_THROTTLE, -32767)
     connection.sendall(command)
     ack = connection.recv(1)
     assert ack == _ACK

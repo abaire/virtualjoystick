@@ -47,8 +47,8 @@ namespace JoystickUsermodeDriver
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct AxisCommand
     {
-        internal short position;
         internal byte axis;
+        internal short position;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -75,7 +75,7 @@ namespace JoystickUsermodeDriver
 
             var bytesToMove = bufferLength - bytesConsumed;
             Buffer.BlockCopy(buffer, bytesConsumed, buffer, 0, bytesToMove);
-            bufferLength -= bytesToMove;
+            bufferLength -= bytesConsumed;
         }
 
         private NetworkUtil() { }
