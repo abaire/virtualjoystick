@@ -161,32 +161,28 @@ namespace JoystickUsermodeDriver
         {
             private const int MaxSimultaneousKeys = 7;
 
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-            public byte[] Button; // 128 button bits
-
-            public short Dial;
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MaxSimultaneousKeys)]
-            public uint[] Keycodes;
-
-            public byte ModifierKeys;
-            public bool POVEast;
-
-            public bool POVNorth;
-            public bool POVSouth;
-            public bool POVWest;
+            public short X;
+            public short Y;
+            public short Throttle;
             public short Rudder;
-
             public short RX;
             public short RY;
             public short RZ;
-
             public short Slider;
+            public short Dial;
 
-            public short Throttle;
+            public bool POVEast;
+            public bool POVNorth;
+            public bool POVSouth;
+            public bool POVWest;
 
-            public short X;
-            public short Y;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+            public byte[] Button; // 128 button bits
+
+            public byte ModifierKeys;
+
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MaxSimultaneousKeys)]
+            public uint[] Keycodes;
 
             public VirtualDeviceState()
             {
@@ -245,13 +241,13 @@ namespace JoystickUsermodeDriver
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct DeviceMapping
         {
-            public const uint Unmapped = (uint) AxisIndex.axis_none;
-
-            private readonly int _invert;
+            public const uint Unmapped = (uint)AxisIndex.axis_none;
 
             public MappingType VirtualDeviceType { get; }
-
             public uint VirtualDeviceIndex { get; }
+            public MappingType SourceType { get; }
+            public uint SourceIndex { get; }
+            private readonly int _invert;
 
             public string VirtualDeviceName
             {
@@ -270,8 +266,6 @@ namespace JoystickUsermodeDriver
 
             public string VirtualDeviceIndexName => IndexName(VirtualDeviceType, VirtualDeviceIndex);
 
-            public MappingType SourceType { get; }
-
             public string SourceName
             {
                 get
@@ -283,8 +277,6 @@ namespace JoystickUsermodeDriver
             }
 
             public string SourceIndexName => IndexName(SourceType, SourceIndex);
-
-            public uint SourceIndex { get; }
 
             public bool Invert => _invert != 0;
 
