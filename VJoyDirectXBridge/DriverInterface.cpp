@@ -246,6 +246,24 @@ DWORD CDriverInterface::UpdateThreadProc(void)
     return 0;
 }
 
+void CDriverInterface::PushDeviceMappings()
+{
+    DeviceVector::iterator it = m_inputDeviceVector.begin();
+    DeviceVector::iterator itEnd = m_inputDeviceVector.end();
+    for (; it != itEnd; ++it)
+    {
+        const auto& entry = m_deviceGUIDMapping.find(it->DeviceGUID());
+        if (entry != m_deviceGUIDMapping.end())
+        {
+            it->SetDeviceMapping(entry->second);
+        }
+        else
+        {
+            it->ClearDeviceMapping();
+        }
+    }
+}
+
 void CDriverInterface::RunPollingLoop(void)
 {
     if (!AcquireDevices())
@@ -255,6 +273,8 @@ void CDriverInterface::RunPollingLoop(void)
     }
 
     UINT32 numFailures = 0;
+
+    PushDeviceMappings();
 
     while (m_updateThreadRunning)
     {
@@ -266,7 +286,7 @@ void CDriverInterface::RunPollingLoop(void)
             DeviceVector::iterator it = m_inputDeviceVector.begin();
             DeviceVector::iterator itEnd = m_inputDeviceVector.end();
             for (; it != itEnd; ++it)
-                it->GetVirtualStateUpdatePacket(packet);
+                it->UpdateVirtualDeviceState(packet);
         }
 
         DWORD bytesWritten;

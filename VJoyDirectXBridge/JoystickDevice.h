@@ -32,7 +32,7 @@ class CJoystickDevice
 public:
     typedef std::vector<DeviceMapping> DeviceMappingVector;
 
-    CJoystickDevice(LPDIRECTINPUT8, const DIDEVICEINSTANCE& device, const DeviceMappingVector& deviceMapping);
+    CJoystickDevice(LPDIRECTINPUT8, const DIDEVICEINSTANCE&, const DeviceMappingVector&);
     CJoystickDevice(CJoystickDevice&&) noexcept;
 
     ~CJoystickDevice()
@@ -41,6 +41,8 @@ public:
     }
 
     CJoystickDevice& operator=(CJoystickDevice&&) noexcept;
+
+    GUID DeviceGUID() const { return m_deviceInstance.guidInstance;  }
 
     HRESULT Acquire();
     void Unacquire();
@@ -62,13 +64,23 @@ public:
         return FALSE;
     }
 
+    void SetDeviceMapping(const DeviceMappingVector& mapping)
+    {
+        m_deviceMapping = mapping;
+    }
+
+    void ClearDeviceMapping()
+    {
+        m_deviceMapping.clear();
+    }
+
     //! \brief Polls the current physical device states and formats a HID DEVICE_PACKET message
     //!        that will be sent to the kernel miniport driver
     //!
     //! \warning  It is the responsibility of the caller to prevent any calls to Add/ClearMapping
     //!           while this function is being invoked!  Failure to do so may cause crashes 
     //!           or inconsistent state!
-    inline BOOL GetVirtualStateUpdatePacket(VENDOR_DEVICE_PACKET& packet);
+    inline BOOL UpdateVirtualDeviceState(VENDOR_DEVICE_PACKET& packet);
 
     BOOL IsPolled() const { return m_isPolled; }
 
@@ -204,7 +216,7 @@ inline void SetReportAxis(VENDOR_DEVICE_PACKET& report, AxisIndex axis, INT16 va
     }
 }
 
-inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(VENDOR_DEVICE_PACKET& packet)
+inline BOOL CJoystickDevice::UpdateVirtualDeviceState(VENDOR_DEVICE_PACKET& packet)
 {
     if (!PollPhysicalStick())
         return FALSE;
@@ -291,6 +303,7 @@ inline BOOL CJoystickDevice::GetVirtualStateUpdatePacket(VENDOR_DEVICE_PACKET& p
                     break;
                 }
             }
+            break;
 
         case MappingType::mt_key:
             if (m_state.rgbButtons[it->srcIndex] == 0x80)

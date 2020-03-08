@@ -68,18 +68,30 @@ public:
 
     BOOL AddDeviceMapping(const GUID& guid, const CJoystickDevice::DeviceMappingVector& mapping)
     {
+        if (m_updateThreadRunning)
+        {
+            return FALSE;
+        }
         m_deviceGUIDMapping[guid] = mapping;
         return TRUE;
     }
 
     BOOL SetDeviceMapping(const DeviceIDMapping& deviceMap)
     {
+        if (m_updateThreadRunning)
+        {
+            return FALSE;
+        }
         m_deviceGUIDMapping = deviceMap;
         return TRUE;
     }
 
     BOOL ClearDeviceMappings()
     {
+        if (m_updateThreadRunning)
+        {
+            return FALSE;
+        }
         m_deviceGUIDMapping.clear();
         return TRUE;
     }
@@ -121,6 +133,8 @@ public:
     void CloseInterruptEvent(void);
 
 protected:
+
+    void PushDeviceMappings();
 
     DWORD UpdateThreadProc(void);
 
