@@ -123,6 +123,16 @@ namespace JoystickUsermodeDriver
             }
         }
 
+        private static void StoreKeycodes(RegistryKey k)
+        {
+            var enumType = typeof(VJoyDriverInterface.Keycode);
+            foreach (var value in Enum.GetValues(enumType))
+            {
+                var name = Enum.GetName(enumType, value);
+                k.SetValue($"Keycode: {name}", (Int32)value, RegistryValueKind.DWord);
+            }
+        }
+
         public static void StoreEnumeratedDevices(UInt32 driverHandle, List<DeviceDescription> devices)
         {
             using (RegistryKey k = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY, true))
@@ -131,6 +141,7 @@ namespace JoystickUsermodeDriver
                 var devicePrototypes = k.CreateSubKey(CURRENT_DEVICE_PROTOTYPES, true);
 
                 StoreSupportedAxes(devicePrototypes);
+                StoreKeycodes(devicePrototypes);
 
                 foreach (DeviceDescription d in devices)
                 {
