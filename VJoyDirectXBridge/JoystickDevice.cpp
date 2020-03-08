@@ -55,6 +55,9 @@ CJoystickDevice::CJoystickDevice(
         JOYSTATEAXISOFFSETS[static_cast<UINT32>(AxisIndex::axis_slider)] = (INT_PTR)&tmp.rglSlider[0] - base;
         JOYSTATEAXISOFFSETS[static_cast<UINT32>(AxisIndex::axis_dial)] = (INT_PTR)&tmp.rglSlider[1] - base;
     }
+
+    memset(m_simulatedButtonPressDownMillisRemaining, 0, sizeof(m_simulatedButtonPressDownMillisRemaining));
+    memset(m_simulatedButtonRepeatIntervalMillisRemaining, 0, sizeof(m_simulatedButtonRepeatIntervalMillisRemaining));
 }
 
 CJoystickDevice::CJoystickDevice(CJoystickDevice&& o) noexcept
@@ -71,6 +74,9 @@ CJoystickDevice& CJoystickDevice::operator=(CJoystickDevice&& o) noexcept
     m_isPolled = o.m_isPolled;
     m_state = o.m_state;
     m_deviceMapping = std::move(o.m_deviceMapping);
+
+    memcpy(m_simulatedButtonPressDownMillisRemaining, o.m_simulatedButtonPressDownMillisRemaining, sizeof(m_simulatedButtonPressDownMillisRemaining));
+    memcpy(m_simulatedButtonRepeatIntervalMillisRemaining, o.m_simulatedButtonRepeatIntervalMillisRemaining, sizeof(m_simulatedButtonRepeatIntervalMillisRemaining));
 
     return *this;
 }

@@ -97,10 +97,11 @@ enum class AxisIndex : UINT32
 
 enum class Transform : BYTE
 {
-    transform_none = 0,
-    transform_invert_axis,
-    transform_rapid_fire,
-    transform_edge_detect
+    none = 0,
+    invert_axis,
+    rapid_fire,
+    edge_detect,
+    leading_edge_detect
 };
 
 #include <pshpack1.h>

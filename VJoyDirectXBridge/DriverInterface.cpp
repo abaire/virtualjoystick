@@ -276,8 +276,21 @@ void CDriverInterface::RunPollingLoop(void)
 
     PushDeviceMappings();
 
+    ULONGLONG lastUpdate = GetTickCount64();
+
     while (m_updateThreadRunning)
     {
+        ULONGLONG now = GetTickCount64();
+        if (now < lastUpdate)
+        {
+            // The loop should run fast enough that any delta between lastUpdate and MaxULONGLONG
+            // can be ignored.
+            lastUpdate = 0;
+        }
+        ULONGLONG timeDelta64 = now - lastUpdate;
+        UINT32 timeDelta = (timeDelta64 > 0xFFFFFFFF) ? 0xFFFFFFFF : (UINT32)timeDelta64;
+        lastUpdate = now;
+
         VENDOR_DEVICE_PACKET packet = m_defaultVirtualDeviceState.load();
         packet.id = REPORTID_VENDOR;
 
@@ -286,7 +299,7 @@ void CDriverInterface::RunPollingLoop(void)
             DeviceVector::iterator it = m_inputDeviceVector.begin();
             DeviceVector::iterator itEnd = m_inputDeviceVector.end();
             for (; it != itEnd; ++it)
-                it->UpdateVirtualDeviceState(packet);
+                it->UpdateVirtualDeviceState(packet, timeDelta);
         }
 
         DWORD bytesWritten;

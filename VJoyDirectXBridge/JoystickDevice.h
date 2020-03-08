@@ -11,6 +11,9 @@
 #define AXIS_MIN  -32767
 #define AXIS_MAX  32767
 
+// Milliseconds to simulate a button press when in edge detect mode.
+#define DEFAULT_EDGE_DETECT_PRESS_MILLIS 150
+
 //! Keycode to set if too many virtual keys are pressed at once.
 #define HID_KEYBOARD_ERROR_ROLL_OVER ((UINT8)0x01)
 
@@ -75,12 +78,13 @@ public:
     }
 
     //! \brief Polls the current physical device states and formats a HID DEVICE_PACKET message
-    //!        that will be sent to the kernel miniport driver
+    //!        that will be sent to the kernel miniport driver.
+    //! \param timeDeltaMillis Approximate time in milliseconds since the last poll.
     //!
     //! \warning  It is the responsibility of the caller to prevent any calls to Add/ClearMapping
     //!           while this function is being invoked!  Failure to do so may cause crashes 
     //!           or inconsistent state!
-    inline BOOL UpdateVirtualDeviceState(VENDOR_DEVICE_PACKET& packet);
+    inline BOOL UpdateVirtualDeviceState(VENDOR_DEVICE_PACKET& packet, UINT32 timeDeltaMillis);
 
     BOOL IsPolled() const { return m_isPolled; }
 
@@ -130,6 +134,12 @@ protected:
 
     //! Vector of mapping structure instance defining how to map the physical device state to the virtual multiplexed device
     DeviceMappingVector m_deviceMapping;
+
+    //! Remaining milliseconds until a simulated button press is reset from the "down" state.
+    UINT32 m_simulatedButtonPressDownMillisRemaining[128];
+
+    //! Remaining milliseconds until a simulated button press is returned to the "down" state.
+    UINT32 m_simulatedButtonRepeatIntervalMillisRemaining[128];
 };
 
 
@@ -216,8 +226,9 @@ inline void SetReportAxis(VENDOR_DEVICE_PACKET& report, AxisIndex axis, INT16 va
     }
 }
 
-inline BOOL CJoystickDevice::UpdateVirtualDeviceState(VENDOR_DEVICE_PACKET& packet)
+inline BOOL CJoystickDevice::UpdateVirtualDeviceState(VENDOR_DEVICE_PACKET& packet, UINT32 timeDeltaMillis)
 {
+    DIJOYSTATE2 previousState = m_state;
     if (!PollPhysicalStick())
         return FALSE;
 
@@ -229,6 +240,43 @@ inline BOOL CJoystickDevice::UpdateVirtualDeviceState(VENDOR_DEVICE_PACKET& pack
     DeviceMappingVector::iterator itEnd = m_deviceMapping.end();
     for (; it != itEnd; ++it)
     {
+        BOOL buttonIsPressed = FALSE;
+        if (it->srcType == MappingType::mt_button)
+        {
+            BOOL newState = m_state.rgbButtons[it->srcIndex] & 0x80;
+            switch (it->transform)
+            {
+            default:
+                buttonIsPressed = newState != 0;
+                break;
+
+            case Transform::leading_edge_detect:
+            case Transform::edge_detect:
+                if ((newState || it->transform == Transform::edge_detect) &&
+                    newState != (previousState.rgbButtons[it->srcIndex] & 0x80))
+                {
+                    UINT32 downTime = it->downMillis ? it->downMillis : DEFAULT_EDGE_DETECT_PRESS_MILLIS;
+                    m_simulatedButtonPressDownMillisRemaining[it->srcIndex] = downTime;
+                    buttonIsPressed = TRUE;
+                }
+                else
+                {
+                    UINT32 millisRemaining = m_simulatedButtonPressDownMillisRemaining[it->srcIndex];
+                    if (!millisRemaining) break;
+                    if (millisRemaining >= timeDeltaMillis)
+                    {
+                        m_simulatedButtonPressDownMillisRemaining[it->srcIndex] -= timeDeltaMillis;
+                        buttonIsPressed = TRUE;
+                    }
+                    else
+                    {
+                        m_simulatedButtonPressDownMillisRemaining[it->srcIndex] = 0;
+                    }
+                }
+                break;
+            }
+        }
+
         switch (it->destType)
         {
         case MappingType::mt_axis:
@@ -239,7 +287,7 @@ inline BOOL CJoystickDevice::UpdateVirtualDeviceState(VENDOR_DEVICE_PACKET& pack
                 // to UINT32 *, dereference as a UINT32, and then cast that value to an INT16 for return (we've
                 // previously set the device up to return values in the 16 bit range)
                 INT16 src = (INT16)*((LONG*)(((BYTE*)&m_state) + JOYSTATEAXISOFFSETS[it->srcIndex]));
-                if (it->transform == Transform::transform_invert_axis)
+                if (it->transform == Transform::invert_axis)
                 {
                     src *= -1;
                 }
@@ -256,7 +304,7 @@ inline BOOL CJoystickDevice::UpdateVirtualDeviceState(VENDOR_DEVICE_PACKET& pack
                 switch (it->srcType)
                 {
                 case MappingType::mt_button:
-                    SETBUTTON(it->destIndex, (m_state.rgbButtons[it->srcIndex] == 0x80));
+                    SETBUTTON(it->destIndex, buttonIsPressed);
                     break;
 
                 case MappingType::mt_pov:
@@ -306,7 +354,7 @@ inline BOOL CJoystickDevice::UpdateVirtualDeviceState(VENDOR_DEVICE_PACKET& pack
             break;
 
         case MappingType::mt_key:
-            if (m_state.rgbButtons[it->srcIndex] == 0x80)
+            if (buttonIsPressed)
             {
                 ADDKEYDOWN(it->destIndex);
             }

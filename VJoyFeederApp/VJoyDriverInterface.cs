@@ -94,7 +94,8 @@ namespace JoystickUsermodeDriver
             None = 0,
             InvertAxis,
             RapidFire,
-            EdgeDetect
+            EdgeDetect,
+            LeadingEdgeDetect
         }
 
         // Keep in sync with VJoyDriverInterface.h
