@@ -88,6 +88,15 @@ namespace JoystickUsermodeDriver
             Button,
             Key
         }
+
+        public enum TransformType: byte
+        {
+            None = 0,
+            InvertAxis,
+            RapidFire,
+            EdgeDetect
+        }
+
         // Keep in sync with VJoyDriverInterface.h
 
         public const int MaxVirtualButtons = 128;
@@ -364,11 +373,17 @@ namespace JoystickUsermodeDriver
         {
             public const uint Unmapped = (uint)AxisIndex.axis_none;
 
-            public MappingType VirtualDeviceType { get; }
-            public uint VirtualDeviceIndex { get; }
-            public MappingType SourceType { get; }
-            public uint SourceIndex { get; }
-            private readonly int _invert;
+            [MarshalAs(UnmanagedType.U4)]
+            public MappingType VirtualDeviceType;
+            public uint VirtualDeviceIndex;
+            [MarshalAs(UnmanagedType.U4)]
+            public MappingType SourceType;
+            public uint SourceIndex;
+            [MarshalAs(UnmanagedType.U1)]
+            public TransformType Transform;
+            public byte DownMillis;
+            public byte RepeatMillis;
+            public byte SensitivityBoost;
 
             public string VirtualDeviceName
             {
@@ -399,8 +414,6 @@ namespace JoystickUsermodeDriver
 
             public string SourceIndexName => IndexName(SourceType, SourceIndex);
 
-            public bool Invert => _invert != 0;
-
             private string IndexName(MappingType type, uint index)
             {
                 if (type == MappingType.Axis)
@@ -417,13 +430,19 @@ namespace JoystickUsermodeDriver
                 uint virtualDeviceIndex,
                 MappingType sourceType,
                 uint sourceIndex,
-                bool invert = false)
+                TransformType transform = TransformType.None,
+                byte downMillis = 0,
+                byte repeatMillis = 0,
+                byte sensitivityBoost = 0)
             {
                 VirtualDeviceType = virtualDeviceType;
                 VirtualDeviceIndex = virtualDeviceIndex;
                 SourceType = sourceType;
                 SourceIndex = sourceIndex;
-                _invert = invert ? 1 : 0;
+                Transform = transform;
+                DownMillis = downMillis;
+                RepeatMillis = repeatMillis;
+                SensitivityBoost = sensitivityBoost;
             }
 
             public DeviceMapping(
@@ -431,140 +450,60 @@ namespace JoystickUsermodeDriver
                 AxisIndex destIndex,
                 MappingType sourceType,
                 AxisIndex srcIndex,
-                bool invert = false)
-                : this(virtualDeviceType, (uint) destIndex, sourceType, (uint) srcIndex, invert)
+                TransformType transform = TransformType.None,
+                byte downMillis = 0,
+                byte repeatMillis = 0,
+                byte sensitivityBoost = 0)
+                : this(
+                    virtualDeviceType,
+                    (uint) destIndex, 
+                    sourceType, 
+                    (uint) srcIndex,
+                    transform, 
+                    downMillis, 
+                    repeatMillis, 
+                    sensitivityBoost)
             {
             }
 
             public DeviceMapping(
-                MappingType destAndSrcBlock,
+                MappingType destAndSrcMappingType,
                 AxisIndex destAndSrcIndex,
-                bool invert = false)
-                : this(destAndSrcBlock, (uint) destAndSrcIndex, destAndSrcBlock, (uint) destAndSrcIndex, invert)
+                TransformType transform = TransformType.None,
+                byte downMillis = 0,
+                byte repeatMillis = 0,
+                byte sensitivityBoost = 0)
+                : this(
+                    destAndSrcMappingType,
+                    (uint) destAndSrcIndex, 
+                    destAndSrcMappingType, 
+                    (uint) destAndSrcIndex,
+                    transform,
+                    downMillis,
+                    repeatMillis,
+                    sensitivityBoost)
             {
             }
 
             public DeviceMapping(
-                MappingType destAndSrcBlock,
+                MappingType destAndSrcMappingType,
                 uint destAndSrcIndex,
-                bool invert = false)
-                : this(destAndSrcBlock, destAndSrcIndex, destAndSrcBlock, destAndSrcIndex, invert)
+                TransformType transform = TransformType.None,
+                byte downMillis = 0,
+                byte repeatMillis = 0,
+                byte sensitivityBoost = 0) 
+                : this(
+                    destAndSrcMappingType, 
+                    destAndSrcIndex, 
+                    destAndSrcMappingType, 
+                    destAndSrcIndex,
+                    transform,
+                    downMillis,
+                    repeatMillis,
+                    sensitivityBoost)
             {
             }
 
-            public DeviceMapping(RegistryKey k)
-            {
-                var enumType = typeof(MappingType);
-                VirtualDeviceType = (MappingType) Enum.Parse(
-                    enumType,
-                    k.GetValue(DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_TYPE, 0).ToString(),
-                    true);
-
-                VirtualDeviceIndex = ReadDeviceIndex(
-                    k,
-                    DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_INDEX,
-                    VirtualDeviceType);
-
-
-                SourceType = (MappingType) Enum.Parse(
-                    enumType,
-                    k.GetValue(DeviceRegistry.REGISTRY_VALUE_SOURCE_TYPE, 0).ToString(),
-                    true);
-
-                SourceIndex = ReadDeviceIndex(
-                    k,
-                    DeviceRegistry.REGISTRY_VALUE_SOURCE_INDEX,
-                    SourceType);
-
-
-                _invert = Convert.ToInt32(k.GetValue(DeviceRegistry.REGISTRY_VALUE_INVERT, 0));
-            }
-
-            private static uint ReadDeviceIndex(RegistryKey k, string valueName, MappingType mappingType)
-            {
-                var value = k.GetValue(valueName, 0);
-
-                if (mappingType == MappingType.Axis)
-                    try
-                    {
-                        var kind = k.GetValueKind(valueName);
-                        if (kind == RegistryValueKind.String)
-                        {
-                            var axisIndex = (AxisIndex) Enum.Parse(typeof(AxisIndex), value.ToString(), true);
-                            return (uint) axisIndex;
-                        }
-                    }
-                    catch (IOException)
-                    {
-                        // Return a default mapping.
-                        return (uint) AxisIndex.axis_none;
-                    }
-
-                if (mappingType == MappingType.Key)
-                    try
-                    {
-                        var kind = k.GetValueKind(valueName);
-                        if (kind == RegistryValueKind.String)
-                        {
-                            uint keycode = 0x04;
-                            var stringVal = value.ToString();
-                            // Single char strings are assumed to be printable and mapped to ASCII.
-                            if (stringVal.Length == 1)
-                            {
-                                keycode = stringVal[0];
-                                if (keycode < 0x80) return keycode;
-
-                                return 0x04;
-                            }
-
-                            keycode = (uint) (Keycode) Enum.Parse(typeof(Keycode), value.ToString(), true);
-                            return keycode;
-                        }
-                    }
-                    catch (IOException)
-                    {
-                        // Return a default mapping.
-                        return 0x04;
-                    }
-
-                return Convert.ToUInt32(value);
-            }
-
-            public void WriteToRegistry(RegistryKey k)
-            {
-                k.SetValue(DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_TYPE, VirtualDeviceType,
-                    RegistryValueKind.String);
-                WriteDeviceIndex(
-                    k,
-                    DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_INDEX,
-                    VirtualDeviceIndex,
-                    VirtualDeviceType);
-
-                k.SetValue(DeviceRegistry.REGISTRY_VALUE_SOURCE_TYPE, SourceType, RegistryValueKind.String);
-                WriteDeviceIndex(
-                    k,
-                    DeviceRegistry.REGISTRY_VALUE_SOURCE_INDEX,
-                    SourceIndex,
-                    SourceType);
-
-                k.SetValue(DeviceRegistry.REGISTRY_VALUE_INVERT, _invert, RegistryValueKind.DWord);
-            }
-
-            private static void WriteDeviceIndex(RegistryKey k, string valueName, uint index, MappingType type)
-            {
-                if (type != MappingType.Axis)
-                    k.SetValue(valueName, index, RegistryValueKind.DWord);
-                else
-                    k.SetValue(valueName, (AxisIndex) index, RegistryValueKind.String);
-            }
-
-            public void WriteToRegistry(RegistryKey k, string subkeyName)
-            {
-                using (var subkey = k.CreateSubKey(subkeyName, true))
-                {
-                    WriteToRegistry(subkey);
-                }
-            }
         }
     }
 }

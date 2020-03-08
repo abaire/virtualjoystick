@@ -69,7 +69,7 @@ extern "C" {
 
 //! \enum   MappingType
 //! \brief  Defines the type of value to be mapped to the virtual driver
-enum class MappingType
+enum class MappingType : UINT32
 {
     mt_axis = 0,
     mt_pov,
@@ -79,7 +79,7 @@ enum class MappingType
 
 //! \enum   AxisIndex
 //! \brief  Defines the index of the various axes in the JOYSTATEAXISOFFSETS
-enum class AxisIndex
+enum class AxisIndex : UINT32
 {
     axis_none = UNMAPPED_INDEX,
     axis_x = 0,
@@ -95,6 +95,14 @@ enum class AxisIndex
     axis_rudder,
 };
 
+enum class Transform : BYTE
+{
+    transform_none = 0,
+    transform_invert_axis,
+    transform_rapid_fire,
+    transform_edge_detect
+};
+
 #include <pshpack1.h>
 
 //! \struct DeviceMapping
@@ -102,12 +110,25 @@ enum class AxisIndex
 typedef struct _DeviceMapping
 {
     MappingType destType; //!< The type of the target virtual joystick state
-    DWORD destIndex; //!< The index of the target virtual joystick state
+    UINT32 destIndex; //!< The index of the target virtual joystick state
 
     MappingType srcType; //!< The type of the source state
-    DWORD srcIndex; //!< The index of the source joystick state
+    UINT32 srcIndex; //!< The index of the source joystick state
 
-    BOOL invert; //!< Whether or not we should logically invert the physical state when injecting the virtual device
+    //! Axis->Axis: inverts the reported physical position during mapping.
+    //! Button/POV->Key: fires a key event on physical state change rather than tracking physical state.
+    //!                  This means an instantaneous button will 
+    Transform transform;
+
+    //! For rapid fire and edge detect: milliseconds to simulate "pressed" state.
+    BYTE downMillis;
+
+    //! For rapid fire: milliseconds between "pressed" events.
+    BYTE repeatMillis;
+
+    //! Sensitivity boost percentage. Values > 0 cause the virtual axis to reach its maximum/minimum
+    //! value at (100 - sensitivityBoost)% of the physical range.
+    BYTE sensitivityBoost;
 } DeviceMapping;
 
 //! \struct VirtualDeviceState

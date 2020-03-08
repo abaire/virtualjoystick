@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
@@ -18,7 +19,10 @@ namespace JoystickUsermodeDriver
         public const string REGISTRY_VALUE_VIRTUAL_DEVICE_INDEX = "virtualIndex";
         public const string REGISTRY_VALUE_SOURCE_TYPE = "sourceType";
         public const string REGISTRY_VALUE_SOURCE_INDEX = "sourceIndex";
-        public const string REGISTRY_VALUE_INVERT = "invert";
+        public const string REGISTRY_VALUE_TRANSFORM_TYPE = "transform";
+        public const string REGISTRY_VALUE_DOWN_MILLIS = "downMilliseconds";
+        public const string REGISTRY_VALUE_REPEAT_MILLIS = "repeatIntervalMilliseconds";
+        public const string REGISTRY_VALUE_SENSITIVITY_BOOST = "sensitivityBoost";
 
         public static UInt32 UpdateLoopDelayMillis
         {
@@ -116,17 +120,28 @@ namespace JoystickUsermodeDriver
         private static void StoreSupportedAxes(RegistryKey k)
         {
             var enumType = typeof(VJoyDriverInterface.AxisIndex);
-            foreach (var value in Enum.GetValues(enumType))
+            foreach (VJoyDriverInterface.AxisIndex value in Enum.GetValues(enumType))
             {
                 var name = Enum.GetName(enumType, value);
-                k.SetValue($"AxisIndex: {name}", (Int32) value, RegistryValueKind.DWord);
+                k.SetValue($"AxisIndex: {name}", (Int32)value, RegistryValueKind.DWord);
+            }
+        }
+
+        private static void StoreSupportedTransforms(RegistryKey k)
+        {
+            var enumType = typeof(VJoyDriverInterface.TransformType);
+            var values = Enum.GetValues(enumType);
+            foreach (VJoyDriverInterface.TransformType value in Enum.GetValues(enumType))
+            {
+                var name = Enum.GetName(enumType, value);
+                k.SetValue($"TransformType: {name}", (Int32)value, RegistryValueKind.DWord);
             }
         }
 
         private static void StoreKeycodes(RegistryKey k)
         {
             var enumType = typeof(VJoyDriverInterface.Keycode);
-            foreach (var value in Enum.GetValues(enumType))
+            foreach (VJoyDriverInterface.Keycode value in Enum.GetValues(enumType))
             {
                 var name = Enum.GetName(enumType, value);
                 k.SetValue($"Keycode: {name}", (Int32)value, RegistryValueKind.DWord);
@@ -141,6 +156,7 @@ namespace JoystickUsermodeDriver
                 var devicePrototypes = k.CreateSubKey(CURRENT_DEVICE_PROTOTYPES, true);
 
                 StoreSupportedAxes(devicePrototypes);
+                StoreSupportedTransforms(devicePrototypes);
                 StoreKeycodes(devicePrototypes);
 
                 foreach (DeviceDescription d in devices)
@@ -213,7 +229,7 @@ namespace JoystickUsermodeDriver
             VJoyDriverInterface.DeviceMapping mapping,
             string mappingName)
         {
-            mapping.WriteToRegistry(deviceKey, mappingKeyName);
+            StoreDeviceMapping(deviceKey, mappingKeyName, mapping);
             using (var mappingKey = deviceKey.CreateSubKey(mappingKeyName))
             {
                 if (mappingKey == null)
@@ -316,7 +332,8 @@ namespace JoystickUsermodeDriver
 
                         try
                         {
-                            var m = new VJoyDriverInterface.DeviceMapping(mappingKey);
+                            var m = new VJoyDriverInterface.DeviceMapping();
+                            LoadDeviceMapping(mappingKey, out m);
                             mappings.Add(m);
                         }
                         catch (ArgumentException)
@@ -331,6 +348,141 @@ namespace JoystickUsermodeDriver
                 }
 
                 return mappings;
+            }
+        }
+
+        private static void LoadDeviceMapping(RegistryKey k, out VJoyDriverInterface.DeviceMapping mapping)
+        {
+            var enumType = typeof(VJoyDriverInterface.MappingType);
+            mapping.VirtualDeviceType = (VJoyDriverInterface.MappingType)Enum.Parse(
+                enumType,
+                k.GetValue(DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_TYPE, 0).ToString(),
+                true);
+
+            mapping.VirtualDeviceIndex = ReadDeviceIndex(
+                k,
+                DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_INDEX,
+                mapping.VirtualDeviceType);
+
+
+            mapping.SourceType = (VJoyDriverInterface.MappingType)Enum.Parse(
+                enumType,
+                k.GetValue(DeviceRegistry.REGISTRY_VALUE_SOURCE_TYPE, 0).ToString(),
+                true);
+
+            mapping.SourceIndex = ReadDeviceIndex(
+                k,
+                DeviceRegistry.REGISTRY_VALUE_SOURCE_INDEX,
+                mapping.SourceType);
+
+            mapping.Transform = (VJoyDriverInterface.TransformType)Enum.Parse(
+                typeof(VJoyDriverInterface.TransformType),
+                k.GetValue(DeviceRegistry.REGISTRY_VALUE_TRANSFORM_TYPE, 0).ToString(),
+                true);
+
+            mapping.DownMillis = Convert.ToByte(k.GetValue(DeviceRegistry.REGISTRY_VALUE_DOWN_MILLIS, 0));
+            mapping.RepeatMillis = Convert.ToByte(k.GetValue(DeviceRegistry.REGISTRY_VALUE_REPEAT_MILLIS, 0));
+            mapping.SensitivityBoost = Convert.ToByte(k.GetValue(DeviceRegistry.REGISTRY_VALUE_SENSITIVITY_BOOST, 0));
+        }
+
+        private static uint ReadDeviceIndex(RegistryKey k, string valueName, VJoyDriverInterface.MappingType mappingType)
+        {
+            var value = k.GetValue(valueName, 0);
+
+            if (mappingType == VJoyDriverInterface.MappingType.Axis)
+                try
+                {
+                    var kind = k.GetValueKind(valueName);
+                    if (kind == RegistryValueKind.String)
+                    {
+                        var axisIndex = (VJoyDriverInterface.AxisIndex)Enum.Parse(
+                            typeof(VJoyDriverInterface.AxisIndex),
+                            value.ToString(),
+                            true);
+                        return (uint)axisIndex;
+                    }
+                }
+                catch (IOException)
+                {
+                    // Return a default mapping.
+                    return (uint)VJoyDriverInterface.AxisIndex.axis_none;
+                }
+
+            if (mappingType == VJoyDriverInterface.MappingType.Key)
+                try
+                {
+                    var kind = k.GetValueKind(valueName);
+                    if (kind == RegistryValueKind.String)
+                    {
+                        uint keycode = 0x04;
+                        var stringVal = value.ToString();
+                        // Single char strings are assumed to be printable and mapped to ASCII.
+                        if (stringVal.Length == 1)
+                        {
+                            keycode = stringVal[0];
+                            if (keycode < 0x80) return keycode;
+
+                            return 0x04;
+                        }
+
+                        keycode = (uint)(VJoyDriverInterface.Keycode)Enum.Parse(
+                            typeof(VJoyDriverInterface.Keycode), 
+                            value.ToString(),
+                            true);
+                        return keycode;
+                    }
+                }
+                catch (IOException)
+                {
+                    // Return a default mapping.
+                    return 0x04;
+                }
+
+            return Convert.ToUInt32(value);
+        }
+
+        public static void StoreDeviceMapping(RegistryKey k, in VJoyDriverInterface.DeviceMapping mapping)
+        {
+            k.SetValue(
+                DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_TYPE,
+                mapping.VirtualDeviceType,
+                RegistryValueKind.String);
+            WriteDeviceIndex(
+                k,
+                DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_INDEX,
+                mapping.VirtualDeviceIndex,
+                mapping.VirtualDeviceType);
+
+            k.SetValue(DeviceRegistry.REGISTRY_VALUE_SOURCE_TYPE, mapping.SourceType, RegistryValueKind.String);
+            WriteDeviceIndex(
+                k,
+                DeviceRegistry.REGISTRY_VALUE_SOURCE_INDEX,
+                mapping.SourceIndex,
+                mapping.SourceType);
+
+            k.SetValue(
+                DeviceRegistry.REGISTRY_VALUE_TRANSFORM_TYPE,
+                mapping.Transform,
+                RegistryValueKind.String);
+
+            k.SetValue(DeviceRegistry.REGISTRY_VALUE_DOWN_MILLIS, mapping.DownMillis);
+            k.SetValue(DeviceRegistry.REGISTRY_VALUE_REPEAT_MILLIS, mapping.RepeatMillis);
+            k.SetValue(DeviceRegistry.REGISTRY_VALUE_SENSITIVITY_BOOST, mapping.SensitivityBoost);
+        }
+
+        private static void WriteDeviceIndex(RegistryKey k, string valueName, uint index, VJoyDriverInterface.MappingType type)
+        {
+            if (type != VJoyDriverInterface.MappingType.Axis)
+                k.SetValue(valueName, index, RegistryValueKind.DWord);
+            else
+                k.SetValue(valueName, (VJoyDriverInterface.AxisIndex)index, RegistryValueKind.String);
+        }
+
+        public static void StoreDeviceMapping(RegistryKey k, string subkeyName, in VJoyDriverInterface.DeviceMapping mapping)
+        {
+            using (var subkey = k.CreateSubKey(subkeyName, true))
+            {
+                StoreDeviceMapping(subkey, mapping);
             }
         }
     }
