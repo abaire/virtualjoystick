@@ -12,7 +12,8 @@
 #define AXIS_MAX  32767
 
 // Milliseconds to simulate a button press when in edge detect mode.
-#define DEFAULT_EDGE_DETECT_PRESS_MILLIS 150
+#define DEFAULT_SIMULATED_PRESS_MILLIS 100
+#define DEFAULT_RAPID_FIRE_INTERVAL_MILLIS 80
 
 //! Keycode to set if too many virtual keys are pressed at once.
 #define HID_KEYBOARD_ERROR_ROLL_OVER ((UINT8)0x01)
@@ -255,7 +256,7 @@ inline BOOL CJoystickDevice::UpdateVirtualDeviceState(VENDOR_DEVICE_PACKET& pack
                 if ((newState || it->transform == Transform::edge_detect) &&
                     newState != (previousState.rgbButtons[it->srcIndex] & 0x80))
                 {
-                    UINT32 downTime = it->downMillis ? it->downMillis : DEFAULT_EDGE_DETECT_PRESS_MILLIS;
+                    UINT32 downTime = it->downMillis ? it->downMillis : DEFAULT_SIMULATED_PRESS_MILLIS;
                     m_simulatedButtonPressDownMillisRemaining[it->srcIndex] = downTime;
                     buttonIsPressed = TRUE;
                 }
@@ -263,7 +264,7 @@ inline BOOL CJoystickDevice::UpdateVirtualDeviceState(VENDOR_DEVICE_PACKET& pack
                 {
                     UINT32 millisRemaining = m_simulatedButtonPressDownMillisRemaining[it->srcIndex];
                     if (!millisRemaining) break;
-                    if (millisRemaining >= timeDeltaMillis)
+                    if (millisRemaining > timeDeltaMillis)
                     {
                         m_simulatedButtonPressDownMillisRemaining[it->srcIndex] -= timeDeltaMillis;
                         buttonIsPressed = TRUE;
@@ -272,6 +273,49 @@ inline BOOL CJoystickDevice::UpdateVirtualDeviceState(VENDOR_DEVICE_PACKET& pack
                     {
                         m_simulatedButtonPressDownMillisRemaining[it->srcIndex] = 0;
                     }
+                }
+                break;
+
+            case Transform::rapid_fire:
+                if (!newState)
+                {
+                    m_simulatedButtonPressDownMillisRemaining[it->srcIndex] = 0;
+                    m_simulatedButtonRepeatIntervalMillisRemaining[it->srcIndex] = 0;
+                }
+                else
+                {
+                    UINT32 pressMillisRemaining = m_simulatedButtonPressDownMillisRemaining[it->srcIndex];
+                    if (pressMillisRemaining)
+                    {
+                        if (pressMillisRemaining > timeDeltaMillis)
+                        {
+                            m_simulatedButtonPressDownMillisRemaining[it->srcIndex] -= timeDeltaMillis;
+                            buttonIsPressed = TRUE;
+                        }
+                        else
+                        {
+                            UINT32 idleTime = it->repeatMillis ? it->repeatMillis : DEFAULT_RAPID_FIRE_INTERVAL_MILLIS;
+                            idleTime -= timeDeltaMillis - pressMillisRemaining;
+                            m_simulatedButtonPressDownMillisRemaining[it->srcIndex] = 0;
+                            m_simulatedButtonRepeatIntervalMillisRemaining[it->srcIndex] = idleTime;
+                        }
+                    }
+                    else
+                    {
+                        if (m_simulatedButtonRepeatIntervalMillisRemaining[it->srcIndex] > timeDeltaMillis)
+                        {
+                            m_simulatedButtonRepeatIntervalMillisRemaining[it->srcIndex] -= timeDeltaMillis;
+                        }
+                        else
+                        {
+                            m_simulatedButtonRepeatIntervalMillisRemaining[it->srcIndex] = 0;
+
+                            UINT32 downTime = it->downMillis ? it->downMillis : DEFAULT_SIMULATED_PRESS_MILLIS;
+                            m_simulatedButtonPressDownMillisRemaining[it->srcIndex] = downTime;
+                            buttonIsPressed = TRUE;
+                        }
+                    }
+
                 }
                 break;
             }
