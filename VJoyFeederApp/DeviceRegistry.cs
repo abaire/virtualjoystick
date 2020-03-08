@@ -465,9 +465,9 @@ namespace JoystickUsermodeDriver
                 mapping.Transform,
                 RegistryValueKind.String);
 
-            k.SetValue(DeviceRegistry.REGISTRY_VALUE_DOWN_MILLIS, mapping.DownMillis);
-            k.SetValue(DeviceRegistry.REGISTRY_VALUE_REPEAT_MILLIS, mapping.RepeatMillis);
-            k.SetValue(DeviceRegistry.REGISTRY_VALUE_SENSITIVITY_BOOST, mapping.SensitivityBoost);
+            k.SetValue(DeviceRegistry.REGISTRY_VALUE_DOWN_MILLIS, mapping.DownMillis, RegistryValueKind.DWord);
+            k.SetValue(DeviceRegistry.REGISTRY_VALUE_REPEAT_MILLIS, mapping.RepeatMillis, RegistryValueKind.DWord);
+            k.SetValue(DeviceRegistry.REGISTRY_VALUE_SENSITIVITY_BOOST, mapping.SensitivityBoost, RegistryValueKind.DWord);
         }
 
         private static void WriteDeviceIndex(RegistryKey k, string valueName, uint index, VJoyDriverInterface.MappingType type)

@@ -331,6 +331,14 @@ inline BOOL CJoystickDevice::UpdateVirtualDeviceState(VENDOR_DEVICE_PACKET& pack
                 // to UINT32 *, dereference as a UINT32, and then cast that value to an INT16 for return (we've
                 // previously set the device up to return values in the 16 bit range)
                 INT16 src = (INT16)*((LONG*)(((BYTE*)&m_state) + JOYSTATEAXISOFFSETS[it->srcIndex]));
+
+                if (it->sensitivityBoost)
+                {
+                    float fSrc = (100.0f + it->sensitivityBoost) / 100.0f * src;
+                    fSrc = min(max(AXIS_MIN, fSrc), AXIS_MAX);
+                    src = static_cast<INT16>(fSrc);
+                }
+
                 if (it->transform == Transform::invert_axis)
                 {
                     src *= -1;

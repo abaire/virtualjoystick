@@ -443,7 +443,7 @@ namespace JoystickUsermodeDriver
                 Transform = transform;
                 DownMillis = downMillis;
                 RepeatMillis = repeatMillis;
-                SensitivityBoost = sensitivityBoost;
+                SensitivityBoost = (byte)(sensitivityBoost > 100 ? 100 : sensitivityBoost);
             }
 
             public DeviceMapping(
