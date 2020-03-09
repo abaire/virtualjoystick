@@ -18,6 +18,10 @@ namespace JoystickUsermodeDriver
             // Prevent duplicate instances.
             if (System.Diagnostics.Process.GetProcessesByName(processName).Length > 1)
             {
+                MessageBox.Show("Application is already running, exiting.",
+                    "Already running",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Exclamation);
                 return;
             }
 

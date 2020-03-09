@@ -203,6 +203,11 @@ namespace JoystickUsermodeDriver
             // Cycling the driver will reload the current profile.
             StopFeedingDriver();
             BeginFeedingDriver();
+            MessageBox.Show(
+                $"Profile \"{DeviceRegistry.ActiveProfileName}\" reloaded.",
+                "Reload complete",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
         }
 
         private void reloadActiveProfileToolStripMenuItem_Click(object sender, EventArgs e)
