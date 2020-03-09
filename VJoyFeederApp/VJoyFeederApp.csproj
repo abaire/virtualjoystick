@@ -79,7 +79,7 @@
   <ItemGroup>
     <Compile Include="ControlProtocol.cs" />
     <Compile Include="ProfileEditorPanel.cs">
-      <SubType>Component</SubType>
+      <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="ProfileEditorPanel.Designer.cs">
       <DependentUpon>ProfileEditorPanel.cs</DependentUpon>

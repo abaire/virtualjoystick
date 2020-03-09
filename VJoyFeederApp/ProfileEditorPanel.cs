@@ -11,6 +11,28 @@ using System.Windows.Forms;
 
 namespace JoystickUsermodeDriver
 {
+    internal class TransformableRow : UserControl
+    {
+        private Label _sourceLabel;
+        private ComboBox _targetMapping;
+
+        TransformableRow()
+        {
+            _sourceLabel = new Label();
+            _sourceLabel.Location = new System.Drawing.Point(5, 8);
+            _sourceLabel.Size = new System.Drawing.Size(232, 20);
+            _sourceLabel.TabIndex = 0;
+
+            _targetMapping = new ComboBox();
+            _targetMapping.Location = new System.Drawing.Point(235, 8);
+            _targetMapping.Size = new System.Drawing.Size(232, 20);
+            _targetMapping.TabIndex = 0;
+
+            Controls.Add(_sourceLabel);
+            Controls.Add(_targetMapping);
+        }
+    }
+
     public partial class ProfileEditorPanel : TableLayoutPanel
     {
         public ProfileEditorPanel()
@@ -22,6 +44,7 @@ namespace JoystickUsermodeDriver
             ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
             ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F));
             BorderStyle = BorderStyle.FixedSingle;
+            RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
 
             InitializeComponent();
         }
@@ -76,7 +99,8 @@ namespace JoystickUsermodeDriver
             sourceLabel.Text = mapping.SourceName;
             Controls.Add(sourceLabel, 1, RowCount);
 
-            var targetSelector = CreateComboBox(mapping.SourceType);
+            // var targetSelector = CreateComboBox(mapping.SourceType);
+            var targetSelector = new Label();
             targetSelector.Text = mapping.VirtualDeviceName;
             Controls.Add(targetSelector, 2, RowCount);
 

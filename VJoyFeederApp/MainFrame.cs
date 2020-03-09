@@ -23,6 +23,9 @@ namespace JoystickUsermodeDriver
         {
             InitializeComponent();
 
+            
+            MaximizeBox = false;
+
             _deviceEnumeration = new List<DeviceDescription>();
 
             _driverHandle = VJoyDriverInterface.AttachToVirtualJoystickDriver();
@@ -236,6 +239,11 @@ namespace JoystickUsermodeDriver
             DeviceRegistry.ActiveProfileName = activeProfileName;
             RefreshDisplay();
             BeginFeedingDriver();
+        }
+
+        private void hideToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MenuShow_Click(sender, e);
         }
     }
 }
