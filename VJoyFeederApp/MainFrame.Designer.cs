@@ -32,29 +32,29 @@ namespace JoystickUsermodeDriver
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainFrame));
-            this.systemTrayIcon = new System.Windows.Forms.NotifyIcon(this.components);
+            this._systemTrayIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this._contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.MenuShow = new System.Windows.Forms.ToolStripMenuItem();
             this.reloadActiveProfileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuClose = new System.Windows.Forms.ToolStripMenuItem();
             this._mainMenuStrip = new System.Windows.Forms.MenuStrip();
+            this.hideToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.refreshToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.reloadActiveProfileToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.profileList = new System.Windows.Forms.ListBox();
             this.label1 = new System.Windows.Forms.Label();
             this._profileEditor = new JoystickUsermodeDriver.ProfileEditorPanel();
-            this.hideToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this._contextMenuStrip.SuspendLayout();
             this._mainMenuStrip.SuspendLayout();
             this.SuspendLayout();
             // 
-            // systemTrayIcon
+            // _systemTrayIcon
             // 
-            this.systemTrayIcon.BalloonTipText = "Joystick Multiplexer Driver";
-            this.systemTrayIcon.ContextMenuStrip = this._contextMenuStrip;
-            this.systemTrayIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("systemTrayIcon.Icon")));
-            this.systemTrayIcon.Text = "Virtual Joystick Driver";
-            this.systemTrayIcon.Visible = true;
+            this._systemTrayIcon.BalloonTipText = "Virtual Joystick Driver";
+            this._systemTrayIcon.ContextMenuStrip = this._contextMenuStrip;
+            this._systemTrayIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("_systemTrayIcon.Icon")));
+            this._systemTrayIcon.Text = "Virtual Joystick Driver";
+            this._systemTrayIcon.Visible = true;
             // 
             // _contextMenuStrip
             // 
@@ -98,6 +98,13 @@ namespace JoystickUsermodeDriver
             this._mainMenuStrip.TabIndex = 34;
             this._mainMenuStrip.Text = "mainMenuStrip";
             // 
+            // hideToolStripMenuItem
+            // 
+            this.hideToolStripMenuItem.Name = "hideToolStripMenuItem";
+            this.hideToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
+            this.hideToolStripMenuItem.Text = "Hide";
+            this.hideToolStripMenuItem.Click += new System.EventHandler(this.hideToolStripMenuItem_Click);
+            // 
             // refreshToolStripMenuItem
             // 
             this.refreshToolStripMenuItem.Name = "refreshToolStripMenuItem";
@@ -137,22 +144,19 @@ namespace JoystickUsermodeDriver
             this._profileEditor.BackColor = System.Drawing.SystemColors.Window;
             this._profileEditor.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this._profileEditor.ColumnCount = 3;
+            this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6F));
+            this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33F));
+            this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 35F));
             this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 8.108109F));
             this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 44.59459F));
             this._profileEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 47.2973F));
             this._profileEditor.Location = new System.Drawing.Point(260, 39);
             this._profileEditor.Name = "_profileEditor";
             this._profileEditor.RowCount = 1;
-            this._profileEditor.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this._profileEditor.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 270F));
+            this._profileEditor.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 270F));
             this._profileEditor.Size = new System.Drawing.Size(537, 272);
             this._profileEditor.TabIndex = 38;
-            // 
-            // hideToolStripMenuItem
-            // 
-            this.hideToolStripMenuItem.Name = "hideToolStripMenuItem";
-            this.hideToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
-            this.hideToolStripMenuItem.Text = "Hide";
-            this.hideToolStripMenuItem.Click += new System.EventHandler(this.hideToolStripMenuItem_Click);
             // 
             // MainFrame
             // 
@@ -184,7 +188,7 @@ namespace JoystickUsermodeDriver
         }
 
         #endregion
-      private System.Windows.Forms.NotifyIcon systemTrayIcon;
+      private System.Windows.Forms.NotifyIcon _systemTrayIcon;
       private System.Windows.Forms.MenuStrip _mainMenuStrip;
         private System.Windows.Forms.ContextMenuStrip _contextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem MenuShow;

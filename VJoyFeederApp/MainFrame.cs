@@ -47,6 +47,8 @@ namespace JoystickUsermodeDriver
                 DeviceRegistry.GenerateDefaultProfile();
             }
 
+            UpdateTooltip(activeProfileName);
+
             RefreshDisplay();
             BeginFeedingDriver();
 
@@ -57,6 +59,11 @@ namespace JoystickUsermodeDriver
 #if DEBUG
             MenuShow_Click(null, null);
 #endif
+        }
+
+        private void UpdateTooltip(string activeProfileName)
+        {
+            _systemTrayIcon.Text = _systemTrayIcon.BalloonTipText = "Virtual Joystick Profile: " + activeProfileName;
         }
 
         private void PopulateProfileList()
@@ -237,6 +244,7 @@ namespace JoystickUsermodeDriver
             StopFeedingDriver();
             var activeProfileName = (string) profileList.SelectedItem;
             DeviceRegistry.ActiveProfileName = activeProfileName;
+            UpdateTooltip(activeProfileName);
             RefreshDisplay();
             BeginFeedingDriver();
         }
