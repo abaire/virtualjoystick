@@ -369,22 +369,40 @@ namespace JoystickUsermodeDriver
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1)]
         public struct DeviceMapping
         {
             public const uint Unmapped = (uint)AxisIndex.axis_none;
 
             [MarshalAs(UnmanagedType.U4)]
+            [FieldOffset(0)]
             public MappingType VirtualDeviceType;
-            public uint VirtualDeviceIndex;
             [MarshalAs(UnmanagedType.U4)]
+            [FieldOffset(4)]
+            public uint VirtualDeviceIndex;
+
+            [MarshalAs(UnmanagedType.U4)]
+            [FieldOffset(8)]
             public MappingType SourceType;
+            [FieldOffset(12)]
             public uint SourceIndex;
+
             [MarshalAs(UnmanagedType.U1)]
+            [FieldOffset(16)]
             public TransformType Transform;
+            [FieldOffset(17)]
             public byte DownMillis;
+            [FieldOffset(18)]
             public byte RepeatMillis;
+            [FieldOffset(19)]
             public byte SensitivityBoost;
+            [FieldOffset(20)]
+            public byte Deadzone;
+
+            [FieldOffset(21)]
+            private byte _pad0;
+            [FieldOffset(22)]
+            private short _pad1;
 
             public string VirtualDeviceName
             {
@@ -434,7 +452,8 @@ namespace JoystickUsermodeDriver
                 TransformType transform = TransformType.None,
                 byte downMillis = 0,
                 byte repeatMillis = 0,
-                byte sensitivityBoost = 0)
+                byte sensitivityBoost = 0,
+                byte deadzone = 0)
             {
                 VirtualDeviceType = virtualDeviceType;
                 VirtualDeviceIndex = virtualDeviceIndex;
@@ -444,6 +463,9 @@ namespace JoystickUsermodeDriver
                 DownMillis = downMillis;
                 RepeatMillis = repeatMillis;
                 SensitivityBoost = (byte)(sensitivityBoost > 100 ? 100 : sensitivityBoost);
+                Deadzone = (byte)(deadzone > 100 ? 100 : deadzone);
+                _pad0 = 0;
+                _pad1 = 0;
             }
 
             public DeviceMapping(
@@ -454,7 +476,8 @@ namespace JoystickUsermodeDriver
                 TransformType transform = TransformType.None,
                 byte downMillis = 0,
                 byte repeatMillis = 0,
-                byte sensitivityBoost = 0)
+                byte sensitivityBoost = 0,
+                byte deadzone = 0)
                 : this(
                     virtualDeviceType,
                     (uint) destIndex, 
@@ -463,7 +486,8 @@ namespace JoystickUsermodeDriver
                     transform, 
                     downMillis, 
                     repeatMillis, 
-                    sensitivityBoost)
+                    sensitivityBoost,
+                    deadzone)
             {
             }
 
@@ -473,7 +497,8 @@ namespace JoystickUsermodeDriver
                 TransformType transform = TransformType.None,
                 byte downMillis = 0,
                 byte repeatMillis = 0,
-                byte sensitivityBoost = 0)
+                byte sensitivityBoost = 0,
+                byte deadzone = 0)
                 : this(
                     destAndSrcMappingType,
                     (uint) destAndSrcIndex, 
@@ -482,7 +507,8 @@ namespace JoystickUsermodeDriver
                     transform,
                     downMillis,
                     repeatMillis,
-                    sensitivityBoost)
+                    sensitivityBoost,
+                    deadzone)
             {
             }
 
@@ -492,7 +518,8 @@ namespace JoystickUsermodeDriver
                 TransformType transform = TransformType.None,
                 byte downMillis = 0,
                 byte repeatMillis = 0,
-                byte sensitivityBoost = 0) 
+                byte sensitivityBoost = 0,
+                byte deadzone = 0)
                 : this(
                     destAndSrcMappingType, 
                     destAndSrcIndex, 
@@ -501,7 +528,8 @@ namespace JoystickUsermodeDriver
                     transform,
                     downMillis,
                     repeatMillis,
-                    sensitivityBoost)
+                    sensitivityBoost,
+                    deadzone)
             {
             }
 

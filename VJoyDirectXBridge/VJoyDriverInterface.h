@@ -130,6 +130,13 @@ typedef struct _DeviceMapping
     //! Sensitivity boost percentage. Values > 0 cause the virtual axis to reach its maximum/minimum
     //! value at (100 - sensitivityBoost)% of the physical range.
     BYTE sensitivityBoost;
+
+    //! Deadzone percentage. Values > 0 cause the physical axis to be ignored until deflected beyond deadzone
+    //! % of the total deflection from 0. E.g., a 5% deadzone will ignore the first 5% of the range above 0
+    //! and the first 5% of the range below 0.
+    BYTE deadzone;
+
+    BYTE _padding[3];
 } DeviceMapping;
 
 //! \struct VirtualDeviceState

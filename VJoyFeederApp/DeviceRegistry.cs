@@ -23,6 +23,7 @@ namespace JoystickUsermodeDriver
         public const string REGISTRY_VALUE_DOWN_MILLIS = "downMilliseconds";
         public const string REGISTRY_VALUE_REPEAT_MILLIS = "repeatIntervalMilliseconds";
         public const string REGISTRY_VALUE_SENSITIVITY_BOOST = "sensitivityBoost";
+        public const string REGISTRY_VALUE_DEADZONE = "deadzone";
 
         public static UInt32 UpdateLoopDelayMillis
         {
@@ -332,7 +333,7 @@ namespace JoystickUsermodeDriver
 
                         try
                         {
-                            var m = new VJoyDriverInterface.DeviceMapping();
+                            VJoyDriverInterface.DeviceMapping m;
                             LoadDeviceMapping(mappingKey, out m);
                             mappings.Add(m);
                         }
@@ -354,35 +355,40 @@ namespace JoystickUsermodeDriver
         private static void LoadDeviceMapping(RegistryKey k, out VJoyDriverInterface.DeviceMapping mapping)
         {
             var enumType = typeof(VJoyDriverInterface.MappingType);
-            mapping.VirtualDeviceType = (VJoyDriverInterface.MappingType)Enum.Parse(
+
+            var m = new VJoyDriverInterface.DeviceMapping();
+            m.VirtualDeviceType = (VJoyDriverInterface.MappingType)Enum.Parse(
                 enumType,
                 k.GetValue(DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_TYPE, 0).ToString(),
                 true);
 
-            mapping.VirtualDeviceIndex = ReadDeviceIndex(
+            m.VirtualDeviceIndex = ReadDeviceIndex(
                 k,
                 DeviceRegistry.REGISTRY_VALUE_VIRTUAL_DEVICE_INDEX,
-                mapping.VirtualDeviceType);
+                m.VirtualDeviceType);
 
 
-            mapping.SourceType = (VJoyDriverInterface.MappingType)Enum.Parse(
+            m.SourceType = (VJoyDriverInterface.MappingType)Enum.Parse(
                 enumType,
                 k.GetValue(DeviceRegistry.REGISTRY_VALUE_SOURCE_TYPE, 0).ToString(),
                 true);
 
-            mapping.SourceIndex = ReadDeviceIndex(
+            m.SourceIndex = ReadDeviceIndex(
                 k,
                 DeviceRegistry.REGISTRY_VALUE_SOURCE_INDEX,
-                mapping.SourceType);
+                m.SourceType);
 
-            mapping.Transform = (VJoyDriverInterface.TransformType)Enum.Parse(
+            m.Transform = (VJoyDriverInterface.TransformType)Enum.Parse(
                 typeof(VJoyDriverInterface.TransformType),
                 k.GetValue(DeviceRegistry.REGISTRY_VALUE_TRANSFORM_TYPE, 0).ToString(),
                 true);
 
-            mapping.DownMillis = Convert.ToByte(k.GetValue(DeviceRegistry.REGISTRY_VALUE_DOWN_MILLIS, 0));
-            mapping.RepeatMillis = Convert.ToByte(k.GetValue(DeviceRegistry.REGISTRY_VALUE_REPEAT_MILLIS, 0));
-            mapping.SensitivityBoost = Convert.ToByte(k.GetValue(DeviceRegistry.REGISTRY_VALUE_SENSITIVITY_BOOST, 0));
+            m.DownMillis = Convert.ToByte(k.GetValue(DeviceRegistry.REGISTRY_VALUE_DOWN_MILLIS, 0));
+            m.RepeatMillis = Convert.ToByte(k.GetValue(DeviceRegistry.REGISTRY_VALUE_REPEAT_MILLIS, 0));
+            m.SensitivityBoost = Convert.ToByte(k.GetValue(DeviceRegistry.REGISTRY_VALUE_SENSITIVITY_BOOST, 0));
+            m.Deadzone = Convert.ToByte(k.GetValue(DeviceRegistry.REGISTRY_VALUE_DEADZONE, 0));
+
+            mapping = m;
         }
 
         private static uint ReadDeviceIndex(RegistryKey k, string valueName, VJoyDriverInterface.MappingType mappingType)
@@ -468,6 +474,7 @@ namespace JoystickUsermodeDriver
             k.SetValue(DeviceRegistry.REGISTRY_VALUE_DOWN_MILLIS, mapping.DownMillis, RegistryValueKind.DWord);
             k.SetValue(DeviceRegistry.REGISTRY_VALUE_REPEAT_MILLIS, mapping.RepeatMillis, RegistryValueKind.DWord);
             k.SetValue(DeviceRegistry.REGISTRY_VALUE_SENSITIVITY_BOOST, mapping.SensitivityBoost, RegistryValueKind.DWord);
+            k.SetValue(DeviceRegistry.REGISTRY_VALUE_DEADZONE, mapping.Deadzone, RegistryValueKind.DWord);
         }
 
         private static void WriteDeviceIndex(RegistryKey k, string valueName, uint index, VJoyDriverInterface.MappingType type)

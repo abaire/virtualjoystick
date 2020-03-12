@@ -332,6 +332,23 @@ inline BOOL CJoystickDevice::UpdateVirtualDeviceState(VENDOR_DEVICE_PACKET& pack
                 // previously set the device up to return values in the 16 bit range)
                 INT16 src = (INT16)*((LONG*)(((BYTE*)&m_state) + JOYSTATEAXISOFFSETS[it->srcIndex]));
 
+                if (it->deadzone)
+                {
+                    float threshold = ((float)it->deadzone / 100.f) * AXIS_MAX;
+                    if (src > -threshold && src < threshold)
+                    {
+                        src = 0;
+                    }
+                    else
+                    {
+                        float sign = src < 0 ? -1.f : 1.f;
+                        float fSrc = (float)src * sign;
+                        fSrc -= threshold;
+                        fSrc *= (float)AXIS_MAX / (AXIS_MAX - threshold);
+                        src = static_cast<INT16>(fSrc * sign);
+                    }
+                }
+
                 if (it->sensitivityBoost)
                 {
                     float fSrc = (100.0f + it->sensitivityBoost) / 100.0f * src;
